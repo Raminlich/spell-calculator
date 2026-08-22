@@ -24,6 +24,7 @@ import {
   createSnapshot,
   downloadSnapshot,
   loadSnapshotFromStorage,
+  readSnapshotFromFile,
   saveSnapshotToStorage,
   type WorkspaceSnapshot,
 } from "@/lib/persistence";
@@ -51,6 +52,11 @@ type SpellConfigContextValue = {
   loadWorkspace: () => boolean;
   /** Download current workspace as a JSON file. */
   exportWorkspace: () => void;
+  /**
+   * Load workspace from an exported JSON file.
+   * On success, applies it and writes localStorage. Returns false if invalid.
+   */
+  importWorkspace: (file: File) => Promise<boolean>;
 };
 
 const SpellConfigContext = createContext<SpellConfigContextValue | null>(null);
@@ -150,6 +156,20 @@ export function SpellConfigProvider({ children }: { children: ReactNode }) {
     downloadSnapshot(snapshot);
   }, [nouns, deliveryVerbs, modifierVerbs, config]);
 
+  const importWorkspace = useCallback(async (file: File) => {
+    const snapshot = await readSnapshotFromFile(file);
+    if (!snapshot) return false;
+    applySnapshot(snapshot, {
+      setNouns,
+      setDeliveryVerbs,
+      setModifierVerbs,
+      setConfig,
+      setLastSavedAt,
+    });
+    saveSnapshotToStorage(snapshot);
+    return true;
+  }, []);
+
   return (
     <SpellConfigContext.Provider
       value={{
@@ -170,6 +190,7 @@ export function SpellConfigProvider({ children }: { children: ReactNode }) {
         saveWorkspace,
         loadWorkspace,
         exportWorkspace,
+        importWorkspace,
       }}
     >
       {children}

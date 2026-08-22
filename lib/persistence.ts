@@ -121,6 +121,30 @@ export function downloadSnapshot(snapshot: WorkspaceSnapshot, filename?: string)
   URL.revokeObjectURL(url);
 }
 
+/** Parse a JSON string from an exported workspace file. */
+export function parseSnapshotJson(text: string): WorkspaceSnapshot | null {
+  try {
+    return parseSnapshot(JSON.parse(text));
+  } catch {
+    return null;
+  }
+}
+
+export function readSnapshotFromFile(file: File): Promise<WorkspaceSnapshot | null> {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result !== "string") {
+        resolve(null);
+        return;
+      }
+      resolve(parseSnapshotJson(reader.result));
+    };
+    reader.onerror = () => resolve(null);
+    reader.readAsText(file);
+  });
+}
+
 export function formatSavedAt(iso: string | null): string | null {
   if (!iso) return null;
   const date = new Date(iso);
