@@ -8,6 +8,15 @@ export const defaultNouns: Noun[] = [
     manaCost: 20,
     castTime: 1.0,
     potency: 10,
+    damage: 12,
+    potencyBleedPercent: 50,
+    statusEffect: {
+      kind: "burn",
+      name: "Burn",
+      potency: 1,
+      duration: 5,
+      damage: 3,
+    },
   },
   {
     id: "frost",
@@ -16,6 +25,15 @@ export const defaultNouns: Noun[] = [
     manaCost: 15,
     castTime: 1.0,
     potency: 6,
+    damage: 7,
+    potencyBleedPercent: 80,
+    statusEffect: {
+      kind: "slow",
+      name: "Slow",
+      potency: 1,
+      duration: 4,
+      slowAmountPercent: 50,
+    },
   },
 ];
 
@@ -38,7 +56,7 @@ export const defaultModifierVerbs: ModifierVerb[] = [
       "Divides the spell into multiple instances. Potency is distributed between all instances.",
     manaCost: 8,
     castTime: 0.3,
-    potencyMultiplier: 1,
+    repeatAllowed: true,
     instanceMultiplier: 2,
   },
   {
@@ -48,8 +66,37 @@ export const defaultModifierVerbs: ModifierVerb[] = [
       "Increases the main spell's potency, and effect potency relative to the noun.",
     manaCost: 12,
     castTime: 0.4,
-    potencyMultiplier: 1.5,
-    instanceMultiplier: 1,
+    repeatAllowed: true,
+    potencyIncreasePercent: 50,
+  },
+  {
+    id: "seek",
+    name: "Seek",
+    description: "Causes the spell to arc toward a target.",
+    manaCost: 6,
+    castTime: 0.2,
+    repeatAllowed: false,
+    seeksTarget: true,
+  },
+  {
+    id: "chain",
+    name: "Chain",
+    description:
+      "Hops to the next close targets. More stacks hop to more targets, but each hop loses potency.",
+    manaCost: 10,
+    castTime: 0.35,
+    repeatAllowed: true,
+    maxTargets: 1,
+    potencyFalloffPercent: 25,
+  },
+  {
+    id: "saturate",
+    name: "Saturate",
+    description: "Increase the duration of any effects the spell currently has.",
+    manaCost: 0,
+    castTime: 0,
+    repeatAllowed: true,
+    durationMultiplier: 1.5,
   },
 ];
 

@@ -1,159 +1,33 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import {
-  defaultNouns,
-  defaultDeliveryVerbs,
-  defaultModifierVerbs,
-  defaultGlobalConfig,
-} from "@/lib/defaultData";
-import { Noun, DeliveryVerb, ModifierVerb, GlobalConfig } from "@/lib/types";
+import { useMemo } from "react";
+import { useSpellConfig } from "@/components/SpellConfigContext";
 import { generateAllCombos } from "@/lib/spellEngine";
-import EditableTable, { EditableColumn } from "@/components/EditableTable";
 import ConfigPanel from "@/components/ConfigPanel";
 import SpellTable from "@/components/SpellTable";
-
-const nounColumns: EditableColumn<Noun>[] = [
-  { key: "name", label: "Name", type: "text", get: (r) => r.name, set: (r, v) => ({ ...r, name: v }) },
-  {
-    key: "description",
-    label: "Description",
-    type: "text",
-    width: "40%",
-    get: (r) => r.description,
-    set: (r, v) => ({ ...r, description: v }),
-  },
-  {
-    key: "manaCost",
-    label: "Mana cost",
-    type: "number",
-    get: (r) => r.manaCost,
-    set: (r, v) => ({ ...r, manaCost: parseFloat(v) || 0 }),
-  },
-  {
-    key: "castTime",
-    label: "Cast time",
-    type: "number",
-    get: (r) => r.castTime,
-    set: (r, v) => ({ ...r, castTime: parseFloat(v) || 0 }),
-  },
-  {
-    key: "potency",
-    label: "Potency",
-    type: "number",
-    get: (r) => r.potency,
-    set: (r, v) => ({ ...r, potency: parseFloat(v) || 0 }),
-  },
-];
-
-const deliveryColumns: EditableColumn<DeliveryVerb>[] = [
-  { key: "name", label: "Name", type: "text", get: (r) => r.name, set: (r, v) => ({ ...r, name: v }) },
-  {
-    key: "description",
-    label: "Description",
-    type: "text",
-    width: "40%",
-    get: (r) => r.description,
-    set: (r, v) => ({ ...r, description: v }),
-  },
-  {
-    key: "manaCost",
-    label: "Mana cost",
-    type: "number",
-    get: (r) => r.manaCost,
-    set: (r, v) => ({ ...r, manaCost: parseFloat(v) || 0 }),
-  },
-  {
-    key: "castTime",
-    label: "Cast time",
-    type: "number",
-    get: (r) => r.castTime,
-    set: (r, v) => ({ ...r, castTime: parseFloat(v) || 0 }),
-  },
-  {
-    key: "baseInstances",
-    label: "Base instances",
-    type: "number",
-    step: 1,
-    get: (r) => r.baseInstances,
-    set: (r, v) => ({ ...r, baseInstances: parseFloat(v) || 0 }),
-  },
-];
-
-const modifierColumns: EditableColumn<ModifierVerb>[] = [
-  { key: "name", label: "Name", type: "text", get: (r) => r.name, set: (r, v) => ({ ...r, name: v }) },
-  {
-    key: "description",
-    label: "Description",
-    type: "text",
-    width: "34%",
-    get: (r) => r.description,
-    set: (r, v) => ({ ...r, description: v }),
-  },
-  {
-    key: "manaCost",
-    label: "Mana cost",
-    type: "number",
-    get: (r) => r.manaCost,
-    set: (r, v) => ({ ...r, manaCost: parseFloat(v) || 0 }),
-  },
-  {
-    key: "castTime",
-    label: "Cast time",
-    type: "number",
-    get: (r) => r.castTime,
-    set: (r, v) => ({ ...r, castTime: parseFloat(v) || 0 }),
-  },
-  {
-    key: "potencyMultiplier",
-    label: "Potency x/stack",
-    type: "number",
-    get: (r) => r.potencyMultiplier,
-    set: (r, v) => ({ ...r, potencyMultiplier: parseFloat(v) || 0 }),
-  },
-  {
-    key: "instanceMultiplier",
-    label: "Instances x/stack",
-    type: "number",
-    get: (r) => r.instanceMultiplier,
-    set: (r, v) => ({ ...r, instanceMultiplier: parseFloat(v) || 0 }),
-  },
-];
+import SaveControls from "@/components/SaveControls";
 
 export default function Home() {
-  const [nouns, setNouns] = useState<Noun[]>(defaultNouns);
-  const [deliveryVerbs, setDeliveryVerbs] = useState<DeliveryVerb[]>(defaultDeliveryVerbs);
-  const [modifierVerbs, setModifierVerbs] = useState<ModifierVerb[]>(defaultModifierVerbs);
-  const [config, setConfig] = useState<GlobalConfig>(defaultGlobalConfig);
+  const { nouns, deliveryVerbs, modifierVerbs, config, setConfig } =
+    useSpellConfig();
 
   const { combos, truncated } = useMemo(
     () => generateAllCombos(nouns, deliveryVerbs, modifierVerbs, config),
     [nouns, deliveryVerbs, modifierVerbs, config]
   );
 
-  function resetAll() {
-    setNouns(defaultNouns);
-    setDeliveryVerbs(defaultDeliveryVerbs);
-    setModifierVerbs(defaultModifierVerbs);
-    setConfig(defaultGlobalConfig);
-  }
-
   return (
     <main className="mx-auto max-w-[1400px] px-6 py-8">
-      <header className="mb-8 flex items-baseline justify-between border-b border-line pb-4">
+      <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight">Spell Calculator</h1>
+          <h1 className="text-lg font-semibold tracking-tight">Calculator</h1>
           <p className="mt-1 text-sm text-ink/55">
-            Noun + verb spell crafting — combo generator &amp; cost balancing
+            Global balance knobs and every generated spell combo. Edit magic
+            components on the Components page.
           </p>
         </div>
-        <button
-          onClick={resetAll}
-          className="rounded border border-line px-3 py-1.5 text-xs font-medium text-ink/60 hover:border-ink/30 hover:text-ink"
-        >
-          Reset to defaults
-        </button>
-      </header>
+        <SaveControls contextLabel="Calculator" />
+      </div>
 
       <section className="mb-8">
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-ink/60">
@@ -164,30 +38,8 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="mb-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <div className="rounded border border-line bg-white p-4">
-          <EditableTable rows={nouns} columns={nounColumns} onChange={setNouns} caption="Nouns" />
-        </div>
-        <div className="rounded border border-line bg-white p-4">
-          <EditableTable
-            rows={deliveryVerbs}
-            columns={deliveryColumns}
-            onChange={setDeliveryVerbs}
-            caption="Delivery verbs"
-          />
-        </div>
-        <div className="rounded border border-line bg-white p-4 lg:col-span-2">
-          <EditableTable
-            rows={modifierVerbs}
-            columns={modifierColumns}
-            onChange={setModifierVerbs}
-            caption="Modifier verbs"
-          />
-        </div>
-      </section>
-
       <section>
-        <div className="mb-3 flex items-baseline justify-between">
+        <div className="mb-3 flex items-baseline justify-between gap-3">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-ink/60">
             Generated combos
           </h2>
@@ -196,7 +48,11 @@ export default function Home() {
             {truncated ? " (capped — narrow your limits for the full set)" : ""}
           </span>
         </div>
-        <SpellTable combos={combos} />
+        <SpellTable
+          combos={combos}
+          nounOptions={nouns.map((n) => ({ id: n.id, name: n.name }))}
+          deliveryOptions={deliveryVerbs.map((d) => ({ id: d.id, name: d.name }))}
+        />
       </section>
     </main>
   );
