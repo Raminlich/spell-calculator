@@ -1,11 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { SpellCombo } from "@/lib/types";
+import { GlobalConfig, SpellCombo } from "@/lib/types";
 import {
   exportCombosTable,
   type TableExportFormat,
 } from "@/lib/tableExport";
+import SpellRadarDialog from "@/components/SpellRadarDialog";
 
 type ColumnGroupId =
   | "identity"
@@ -207,11 +208,13 @@ type FilterOption = { id: string; name: string };
 
 export default function SpellTable({
   combos,
+  config,
   nounOptions,
   deliveryOptions,
   modifierOptions,
 }: {
   combos: SpellCombo[];
+  config: GlobalConfig;
   nounOptions: FilterOption[];
   deliveryOptions: FilterOption[];
   modifierOptions: FilterOption[];
@@ -228,6 +231,7 @@ export default function SpellTable({
   const [activeGroups, setActiveGroups] = useState<Set<ColumnGroupId>>(
     () => new Set(ALL_GROUP_IDS)
   );
+  const [radarCombo, setRadarCombo] = useState<SpellCombo | null>(null);
 
   const visibleColumns = useMemo(
     () => columns.filter((col) => activeGroups.has(col.group)),
@@ -495,6 +499,12 @@ export default function SpellTable({
             <caption className="sr-only">Generated spell combinations</caption>
             <thead className="sticky top-0 bg-paper">
               <tr className="border-b border-line">
+                <th
+                  scope="col"
+                  className="w-10 px-2 py-2 text-left font-medium text-ink/50"
+                >
+                  <span className="sr-only">Radar</span>
+                </th>
                 {visibleColumns.map((col) => (
                   <th
                     key={col.key}
@@ -520,6 +530,31 @@ export default function SpellTable({
                   key={c.key}
                   className="border-b border-line/60 last:border-0 hover:bg-paper/60"
                 >
+                  <td className="px-2 py-1.5">
+                    <button
+                      type="button"
+                      aria-label={`Open radar for ${c.label}`}
+                      title="Radar score"
+                      onClick={() => setRadarCombo(c)}
+                      className="inline-flex size-7 items-center justify-center rounded border border-line text-ink/45 transition-colors hover:border-accent hover:text-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                    >
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 16 16"
+                        aria-hidden="true"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.4"
+                      >
+                        <polygon points="8,1.5 14.5,5.5 12,13.5 4,13.5 1.5,5.5" />
+                        <circle cx="8" cy="8" r="1.2" fill="currentColor" stroke="none" />
+                        <line x1="8" y1="8" x2="8" y2="1.5" />
+                        <line x1="8" y1="8" x2="14.5" y2="5.5" />
+                        <line x1="8" y1="8" x2="4" y2="13.5" />
+                      </svg>
+                    </button>
+                  </td>
                   {visibleColumns.map((col) => (
                     <td
                       key={col.key}
@@ -541,6 +576,13 @@ export default function SpellTable({
           </div>
         )}
       </div>
+
+      <SpellRadarDialog
+        combo={radarCombo}
+        config={config}
+        open={radarCombo !== null}
+        onClose={() => setRadarCombo(null)}
+      />
     </div>
   );
 }

@@ -90,6 +90,18 @@ export type GlobalConfig = {
   maxRepeatPerModifier: number; // cap on how many times a single modifier can stack
   maxTotalModifiers: number; // cap on total modifier count in one spell
   minTotalModifiers: number; // floor on total modifier count in one spell
+  /** Radar axis max weight: Cost (accessibility & sustainability). */
+  radarMaxCost: number;
+  /** Radar axis max weight: Time (tempo & DPS). */
+  radarMaxTime: number;
+  /** Radar axis max weight: Impact (raw burst & damage). */
+  radarMaxImpact: number;
+  /** Radar axis max weight: Efficiency (optimization & value). */
+  radarMaxEfficiency: number;
+  /** Radar axis max weight: Delivery & Control (reliability & utility). */
+  radarMaxDeliveryControl: number;
+  /** Radar axis max weight: Status Effect (DoT / debuffing). */
+  radarMaxStatusEffect: number;
 };
 
 export type ModifierCount = Record<string, number>; // modifierId -> stack count

@@ -4,6 +4,7 @@ import type {
   ModifierVerb,
   GlobalConfig,
 } from "@/lib/types";
+import { defaultGlobalConfig } from "@/lib/defaultData";
 
 export const STORAGE_KEY = "spell-calculator:workspace:v1";
 
@@ -55,18 +56,41 @@ function normalizeModifier(mod: ModifierVerb): ModifierVerb {
   };
 }
 
-function isGlobalConfig(value: unknown): value is GlobalConfig {
-  if (!isObject(value)) return false;
-  const keys: (keyof GlobalConfig)[] = [
-    "manaMultiplier",
-    "castTimeMultiplier",
-    "manaExponent",
-    "timeExponent",
-    "maxRepeatPerModifier",
-    "maxTotalModifiers",
-    "minTotalModifiers",
-  ];
-  return keys.every((key) => typeof value[key] === "number");
+const REQUIRED_CONFIG_KEYS: (keyof GlobalConfig)[] = [
+  "manaMultiplier",
+  "castTimeMultiplier",
+  "manaExponent",
+  "timeExponent",
+  "maxRepeatPerModifier",
+  "maxTotalModifiers",
+  "minTotalModifiers",
+];
+
+const OPTIONAL_RADAR_KEYS: (keyof GlobalConfig)[] = [
+  "radarMaxCost",
+  "radarMaxTime",
+  "radarMaxImpact",
+  "radarMaxEfficiency",
+  "radarMaxDeliveryControl",
+  "radarMaxStatusEffect",
+];
+
+function normalizeGlobalConfig(value: unknown): GlobalConfig | null {
+  if (!isObject(value)) return null;
+  if (!REQUIRED_CONFIG_KEYS.every((key) => typeof value[key] === "number")) {
+    return null;
+  }
+
+  const config = { ...defaultGlobalConfig };
+  for (const key of REQUIRED_CONFIG_KEYS) {
+    config[key] = value[key] as number;
+  }
+  for (const key of OPTIONAL_RADAR_KEYS) {
+    if (typeof value[key] === "number") {
+      config[key] = value[key] as number;
+    }
+  }
+  return config;
 }
 
 export function parseSnapshot(raw: unknown): WorkspaceSnapshot | null {
@@ -76,7 +100,8 @@ export function parseSnapshot(raw: unknown): WorkspaceSnapshot | null {
   if (!isNounArray(raw.nouns)) return null;
   if (!isDeliveryArray(raw.deliveryVerbs)) return null;
   if (!isModifierArray(raw.modifierVerbs)) return null;
-  if (!isGlobalConfig(raw.config)) return null;
+  const config = normalizeGlobalConfig(raw.config);
+  if (!config) return null;
 
   return {
     version: 1,
@@ -84,7 +109,7 @@ export function parseSnapshot(raw: unknown): WorkspaceSnapshot | null {
     nouns: raw.nouns,
     deliveryVerbs: raw.deliveryVerbs,
     modifierVerbs: raw.modifierVerbs.map(normalizeModifier),
-    config: raw.config,
+    config,
   };
 }
 

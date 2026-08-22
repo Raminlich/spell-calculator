@@ -50,6 +50,7 @@ export default function Home() {
         </div>
         <SpellTable
           combos={combos}
+          config={config}
           nounOptions={nouns.map((n) => ({ id: n.id, name: n.name }))}
           deliveryOptions={deliveryVerbs.map((d) => ({ id: d.id, name: d.name }))}
           modifierOptions={modifierVerbs.map((m) => ({ id: m.id, name: m.name }))}

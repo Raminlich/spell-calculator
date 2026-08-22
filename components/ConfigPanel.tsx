@@ -48,55 +48,113 @@ export default function ConfigPanel({
   }
 
   return (
-    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-      <Field
-        label="Mana multiplier"
-        hint="Global scalar on total mana cost"
-        value={config.manaMultiplier}
-        onChange={(v) => set("manaMultiplier", v)}
-      />
-      <Field
-        label="Cast time multiplier"
-        hint="Global scalar on total cast time"
-        value={config.castTimeMultiplier}
-        onChange={(v) => set("castTimeMultiplier", v)}
-      />
-      <Field
-        label="Mana growth base"
-        hint="Per-stack exponent for repeated modifiers"
-        value={config.manaExponent}
-        onChange={(v) => set("manaExponent", v)}
-      />
-      <Field
-        label="Time growth base"
-        hint="Per-stack exponent for repeated modifiers"
-        value={config.timeExponent}
-        onChange={(v) => set("timeExponent", v)}
-      />
-      <Field
-        label="Max repeats / modifier"
-        hint="Cap on stacking one modifier type"
-        value={config.maxRepeatPerModifier}
-        step={1}
-        min={0}
-        onChange={(v) => set("maxRepeatPerModifier", Math.round(v))}
-      />
-      <Field
-        label="Max modifiers / spell"
-        hint="Cap on total modifier count"
-        value={config.maxTotalModifiers}
-        step={1}
-        min={0}
-        onChange={(v) => set("maxTotalModifiers", Math.round(v))}
-      />
-      <Field
-        label="Min modifiers / spell"
-        hint="Floor on total modifier count"
-        value={config.minTotalModifiers}
-        step={1}
-        min={0}
-        onChange={(v) => set("minTotalModifiers", Math.round(v))}
-      />
+    <div className="space-y-6">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+        <Field
+          label="Mana multiplier"
+          hint="Global scalar on total mana cost"
+          value={config.manaMultiplier}
+          onChange={(v) => set("manaMultiplier", v)}
+        />
+        <Field
+          label="Cast time multiplier"
+          hint="Global scalar on total cast time"
+          value={config.castTimeMultiplier}
+          onChange={(v) => set("castTimeMultiplier", v)}
+        />
+        <Field
+          label="Mana growth base"
+          hint="Per-stack exponent for repeated modifiers"
+          value={config.manaExponent}
+          onChange={(v) => set("manaExponent", v)}
+        />
+        <Field
+          label="Time growth base"
+          hint="Per-stack exponent for repeated modifiers"
+          value={config.timeExponent}
+          onChange={(v) => set("timeExponent", v)}
+        />
+        <Field
+          label="Max repeats / modifier"
+          hint="Cap on stacking one modifier type"
+          value={config.maxRepeatPerModifier}
+          step={1}
+          min={0}
+          onChange={(v) => set("maxRepeatPerModifier", Math.round(v))}
+        />
+        <Field
+          label="Max modifiers / spell"
+          hint="Cap on total modifier count"
+          value={config.maxTotalModifiers}
+          step={1}
+          min={0}
+          onChange={(v) => set("maxTotalModifiers", Math.round(v))}
+        />
+        <Field
+          label="Min modifiers / spell"
+          hint="Floor on total modifier count"
+          value={config.minTotalModifiers}
+          step={1}
+          min={0}
+          onChange={(v) => set("minTotalModifiers", Math.round(v))}
+        />
+      </div>
+
+      <div>
+        <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-ink/50">
+          Radar axis max weights
+        </h3>
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+          <Field
+            label="Cost"
+            hint="Accessibility & sustainability"
+            value={config.radarMaxCost}
+            step={1}
+            min={0}
+            onChange={(v) => set("radarMaxCost", Math.max(0, v))}
+          />
+          <Field
+            label="Time"
+            hint="Tempo & DPS"
+            value={config.radarMaxTime}
+            step={1}
+            min={0}
+            onChange={(v) => set("radarMaxTime", Math.max(0, v))}
+          />
+          <Field
+            label="Impact"
+            hint="Raw burst & damage"
+            value={config.radarMaxImpact}
+            step={1}
+            min={0}
+            onChange={(v) => set("radarMaxImpact", Math.max(0, v))}
+          />
+          <Field
+            label="Efficiency"
+            hint="Optimization & value"
+            value={config.radarMaxEfficiency}
+            step={1}
+            min={0}
+            onChange={(v) => set("radarMaxEfficiency", Math.max(0, v))}
+          />
+          <Field
+            label="Delivery & Control"
+            hint="Reliability & utility"
+            value={config.radarMaxDeliveryControl}
+            step={1}
+            min={0}
+            onChange={(v) => set("radarMaxDeliveryControl", Math.max(0, v))}
+          />
+          <Field
+            label="Status Effect"
+            hint="DoT / debuffing"
+            value={config.radarMaxStatusEffect}
+            step={1}
+            min={0}
+            onChange={(v) => set("radarMaxStatusEffect", Math.max(0, v))}
+          />
+        </div>
+      </div>
     </div>
   );
 }

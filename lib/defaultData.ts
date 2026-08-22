@@ -108,6 +108,12 @@ export const defaultGlobalConfig: GlobalConfig = {
   maxRepeatPerModifier: 3,
   maxTotalModifiers: 4,
   minTotalModifiers: 0,
+  radarMaxCost: 10,
+  radarMaxTime: 10,
+  radarMaxImpact: 10,
+  radarMaxEfficiency: 10,
+  radarMaxDeliveryControl: 10,
+  radarMaxStatusEffect: 10,
 };
 
 // Safety cap so the UI never tries to render an unreasonable number of rows.
