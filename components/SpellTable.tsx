@@ -6,6 +6,7 @@ import {
   exportCombosTable,
   type TableExportFormat,
 } from "@/lib/tableExport";
+import { scoreSpellRadar } from "@/lib/radarScore";
 import SpellRadarDialog from "@/components/SpellRadarDialog";
 
 type ColumnGroupId =
@@ -263,10 +264,26 @@ export default function SpellTable({
     modifierFilterExclusive,
   ]);
 
+  const radarScores = useMemo(() => {
+    const map = new Map<string, { total: number; max: number }>();
+    for (const c of filtered) {
+      const radar = scoreSpellRadar(c, config);
+      map.set(c.key, {
+        total: radar.totalScore,
+        max: radar.maxTotalScore,
+      });
+    }
+    return map;
+  }, [filtered, config]);
+
   const sorted = useMemo(() => {
-    const col = columns.find((c) => c.key === sortKey);
-    if (!col) return filtered;
-    const withValues = filtered.map((c) => ({ c, v: col.get(c) }));
+    const withValues = filtered.map((c) => {
+      if (sortKey === "radarScore") {
+        return { c, v: radarScores.get(c.key)?.total ?? 0 };
+      }
+      const col = columns.find((column) => column.key === sortKey);
+      return { c, v: col ? col.get(c) : 0 };
+    });
     withValues.sort((a, b) => {
       if (typeof a.v === "number" && typeof b.v === "number") {
         return a.v - b.v;
@@ -275,14 +292,14 @@ export default function SpellTable({
     });
     if (sortDir === "desc") withValues.reverse();
     return withValues.map((w) => w.c);
-  }, [filtered, sortKey, sortDir]);
+  }, [filtered, sortKey, sortDir, radarScores]);
 
   function toggleSort(key: string) {
     if (key === sortKey) {
       setSortDir((d) => (d === "asc" ? "desc" : "asc"));
     } else {
       setSortKey(key);
-      setSortDir("asc");
+      setSortDir(key === "radarScore" ? "desc" : "asc");
     }
   }
 
@@ -501,9 +518,15 @@ export default function SpellTable({
               <tr className="border-b border-line">
                 <th
                   scope="col"
-                  className="w-10 px-2 py-2 text-left font-medium text-ink/50"
+                  onClick={() => toggleSort("radarScore")}
+                  className="cursor-pointer select-none whitespace-nowrap px-2 py-2 text-left font-medium text-ink/70 hover:text-ink"
                 >
-                  <span className="sr-only">Radar</span>
+                  Score
+                  {sortKey === "radarScore" && (
+                    <span className="ml-1 text-accent">
+                      {sortDir === "asc" ? "\u2191" : "\u2193"}
+                    </span>
+                  )}
                 </th>
                 {visibleColumns.map((col) => (
                   <th
@@ -525,35 +548,49 @@ export default function SpellTable({
               </tr>
             </thead>
             <tbody>
-              {sorted.map((c) => (
+              {sorted.map((c) => {
+                const score = radarScores.get(c.key);
+                return (
                 <tr
                   key={c.key}
                   className="border-b border-line/60 last:border-0 hover:bg-paper/60"
                 >
                   <td className="px-2 py-1.5">
-                    <button
-                      type="button"
-                      aria-label={`Open radar for ${c.label}`}
-                      title="Radar score"
-                      onClick={() => setRadarCombo(c)}
-                      className="inline-flex size-7 items-center justify-center rounded border border-line text-ink/45 transition-colors hover:border-accent hover:text-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-                    >
-                      <svg
-                        width="14"
-                        height="14"
-                        viewBox="0 0 16 16"
-                        aria-hidden="true"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1.4"
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        aria-label={`Open radar for ${c.label}`}
+                        title="Radar score"
+                        onClick={() => setRadarCombo(c)}
+                        className="inline-flex size-7 shrink-0 items-center justify-center rounded border border-line text-ink/45 transition-colors hover:border-accent hover:text-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                       >
-                        <polygon points="8,1.5 14.5,5.5 12,13.5 4,13.5 1.5,5.5" />
-                        <circle cx="8" cy="8" r="1.2" fill="currentColor" stroke="none" />
-                        <line x1="8" y1="8" x2="8" y2="1.5" />
-                        <line x1="8" y1="8" x2="14.5" y2="5.5" />
-                        <line x1="8" y1="8" x2="4" y2="13.5" />
-                      </svg>
-                    </button>
+                        <svg
+                          width="14"
+                          height="14"
+                          viewBox="0 0 16 16"
+                          aria-hidden="true"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.4"
+                        >
+                          <polygon points="8,1.5 14.5,5.5 12,13.5 4,13.5 1.5,5.5" />
+                          <circle cx="8" cy="8" r="1.2" fill="currentColor" stroke="none" />
+                          <line x1="8" y1="8" x2="8" y2="1.5" />
+                          <line x1="8" y1="8" x2="14.5" y2="5.5" />
+                          <line x1="8" y1="8" x2="4" y2="13.5" />
+                        </svg>
+                      </button>
+                      <span
+                        className="font-mono text-[13px] tabular-nums text-ink/80"
+                        title={
+                          score
+                            ? `Score ${score.total.toFixed(1)} / ${score.max.toFixed(0)}`
+                            : undefined
+                        }
+                      >
+                        {score ? score.total.toFixed(1) : "—"}
+                      </span>
+                    </div>
                   </td>
                   {visibleColumns.map((col) => (
                     <td
@@ -566,7 +603,8 @@ export default function SpellTable({
                     </td>
                   ))}
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         )}
