@@ -7,91 +7,172 @@ import {
   type TableExportFormat,
 } from "@/lib/tableExport";
 
+type ColumnGroupId =
+  | "identity"
+  | "cost"
+  | "damage"
+  | "potency"
+  | "targeting"
+  | "effects";
+
 type ColumnDef = {
   key: string;
   label: string;
+  group: ColumnGroupId;
   align?: "left" | "right";
   get: (c: SpellCombo) => string | number;
   format?: (c: SpellCombo) => string;
 };
 
+const COLUMN_GROUPS: { id: ColumnGroupId; label: string }[] = [
+  { id: "identity", label: "Identity" },
+  { id: "cost", label: "Cost" },
+  { id: "damage", label: "Damage" },
+  { id: "potency", label: "Potency" },
+  { id: "targeting", label: "Targeting" },
+  { id: "effects", label: "Effects" },
+];
+
+const ALL_GROUP_IDS = COLUMN_GROUPS.map((g) => g.id);
+
 const columns: ColumnDef[] = [
-  { key: "label", label: "Spell", align: "left", get: (c) => c.label },
-  { key: "noun", label: "Noun", align: "left", get: (c) => c.noun.name },
-  { key: "delivery", label: "Delivery", align: "left", get: (c) => c.delivery.name },
+  { key: "label", label: "Spell", group: "identity", align: "left", get: (c) => c.label },
+  { key: "noun", label: "Noun", group: "identity", align: "left", get: (c) => c.noun.name },
+  {
+    key: "delivery",
+    label: "Delivery",
+    group: "identity",
+    align: "left",
+    get: (c) => c.delivery.name,
+  },
   {
     key: "totalModifiers",
     label: "Modifiers",
+    group: "identity",
     align: "right",
     get: (c) => c.totalModifiers,
   },
   {
     key: "manaCost",
-    label: "Mana cost",
+    label: "Mana Cost",
+    group: "cost",
     align: "right",
     get: (c) => c.manaCost,
     format: (c) => c.manaCost.toFixed(1),
   },
   {
     key: "castTime",
-    label: "Cast time",
+    label: "Cast Time",
+    group: "cost",
     align: "right",
     get: (c) => c.castTime,
     format: (c) => c.castTime.toFixed(2) + "s",
   },
-  { key: "instances", label: "Instances", align: "right", get: (c) => c.instances },
   {
-    key: "seeksTarget",
-    label: "Seek",
-    align: "left",
-    get: (c) => (c.seeksTarget ? "yes" : "—"),
+    key: "manaPerSecond",
+    label: "Mana / Second",
+    group: "cost",
+    align: "right",
+    get: (c) => c.manaPerSecond,
+    format: (c) => (c.castTime > 0 ? c.manaPerSecond.toFixed(2) : "—"),
   },
   {
-    key: "chainTargets",
-    label: "Targets",
+    key: "instances",
+    label: "Instances",
+    group: "damage",
     align: "right",
-    get: (c) => c.chainTargets,
+    get: (c) => c.instances,
   },
   {
-    key: "chainLastHop",
-    label: "Last hop pot.",
+    key: "damagePerInstance",
+    label: "Damage / Instance",
+    group: "damage",
     align: "right",
-    get: (c) => c.potencyPerInstance * c.chainLastHopFactor,
-    format: (c) =>
-      c.chainTargets > 1
-        ? (c.potencyPerInstance * c.chainLastHopFactor).toFixed(2)
-        : "—",
+    get: (c) => c.damagePerInstance,
+    format: (c) => c.damagePerInstance.toFixed(2),
+  },
+  {
+    key: "totalDamage",
+    label: "Total Damage",
+    group: "damage",
+    align: "right",
+    get: (c) => c.totalDamage,
+    format: (c) => c.totalDamage.toFixed(2),
+  },
+  {
+    key: "damagePerMana",
+    label: "Damage / Mana",
+    group: "damage",
+    align: "right",
+    get: (c) => c.damagePerMana,
+    format: (c) => (c.manaCost > 0 ? c.damagePerMana.toFixed(3) : "—"),
   },
   {
     key: "potencyPool",
-    label: "Potency pool",
+    label: "Potency Pool",
+    group: "potency",
     align: "right",
     get: (c) => c.potencyPool,
     format: (c) => c.potencyPool.toFixed(1),
   },
   {
     key: "potencyPerInstance",
-    label: "Potency / inst",
+    label: "Potency / Instance",
+    group: "potency",
     align: "right",
     get: (c) => c.potencyPerInstance,
     format: (c) => c.potencyPerInstance.toFixed(2),
   },
   {
-    key: "damagePerInstance",
-    label: "Dmg / inst",
+    key: "potencyPerMana",
+    label: "Potency / Mana",
+    group: "potency",
     align: "right",
-    get: (c) => c.damagePerInstance,
-    format: (c) => c.damagePerInstance.toFixed(2),
+    get: (c) => c.potencyPerMana,
+    format: (c) => (c.manaCost > 0 ? c.potencyPerMana.toFixed(3) : "—"),
+  },
+  {
+    key: "potencyPerSecond",
+    label: "Potency / Second",
+    group: "potency",
+    align: "right",
+    get: (c) => c.potencyPerSecond,
+    format: (c) => (c.castTime > 0 ? c.potencyPerSecond.toFixed(2) : "—"),
+  },
+  {
+    key: "lastHopPotency",
+    label: "Last Hop Potency",
+    group: "potency",
+    align: "right",
+    get: (c) => c.lastHopPotency,
+    format: (c) =>
+      c.chainTargets > 1 ? c.lastHopPotency.toFixed(2) : "—",
+  },
+  {
+    key: "seeksTarget",
+    label: "Seek",
+    group: "targeting",
+    align: "left",
+    get: (c) => (c.seeksTarget ? "yes" : "—"),
+  },
+  {
+    key: "chainTargets",
+    label: "Targets",
+    group: "targeting",
+    align: "right",
+    get: (c) => c.chainTargets,
   },
   {
     key: "effect",
     label: "Effect",
+    group: "effects",
     align: "left",
     get: (c) => c.effect.name,
   },
   {
     key: "effectPotency",
-    label: "Effect pot.",
+    label: "Effect Potency",
+    group: "effects",
     align: "right",
     get: (c) => c.effect.potency,
     format: (c) => c.effect.potency.toFixed(2),
@@ -99,13 +180,15 @@ const columns: ColumnDef[] = [
   {
     key: "effectDuration",
     label: "Duration",
+    group: "effects",
     align: "right",
     get: (c) => c.effect.duration,
     format: (c) => c.effect.duration.toFixed(1) + "s",
   },
   {
     key: "effectOutput",
-    label: "Burn dmg / Slow %",
+    label: "Burn Damage / Slow %",
+    group: "effects",
     align: "right",
     get: (c) =>
       c.effect.kind === "burn"
@@ -118,13 +201,6 @@ const columns: ColumnDef[] = [
       return (c.effect.slowAmountPercent ?? c.effect.potency).toFixed(1) + "%";
     },
   },
-  {
-    key: "efficiency",
-    label: "Potency / mana",
-    align: "right",
-    get: (c) => (c.manaCost > 0 ? c.potencyPool / c.manaCost : 0),
-    format: (c) => (c.manaCost > 0 ? (c.potencyPool / c.manaCost).toFixed(3) : "—"),
-  },
 ];
 
 type FilterOption = { id: string; name: string };
@@ -133,24 +209,55 @@ export default function SpellTable({
   combos,
   nounOptions,
   deliveryOptions,
+  modifierOptions,
 }: {
   combos: SpellCombo[];
   nounOptions: FilterOption[];
   deliveryOptions: FilterOption[];
+  modifierOptions: FilterOption[];
 }) {
   const [sortKey, setSortKey] = useState<string>("manaCost");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [nounFilter, setNounFilter] = useState<string>("all");
   const [deliveryFilter, setDeliveryFilter] = useState<string>("all");
+  const [modifierFilter, setModifierFilter] = useState<Set<string>>(
+    () => new Set()
+  );
+  const [modifierFilterExclusive, setModifierFilterExclusive] = useState(false);
   const [exportFormat, setExportFormat] = useState<TableExportFormat>("csv");
+  const [activeGroups, setActiveGroups] = useState<Set<ColumnGroupId>>(
+    () => new Set(ALL_GROUP_IDS)
+  );
+
+  const visibleColumns = useMemo(
+    () => columns.filter((col) => activeGroups.has(col.group)),
+    [activeGroups]
+  );
 
   const filtered = useMemo(() => {
     return combos.filter((c) => {
       if (nounFilter !== "all" && c.noun.id !== nounFilter) return false;
       if (deliveryFilter !== "all" && c.delivery.id !== deliveryFilter) return false;
+      if (modifierFilter.size > 0) {
+        if (modifierFilterExclusive) {
+          for (const id of modifierFilter) {
+            if (c.modifierCounts[id] > 0) return false;
+          }
+        } else {
+          for (const id of modifierFilter) {
+            if (!(c.modifierCounts[id] > 0)) return false;
+          }
+        }
+      }
       return true;
     });
-  }, [combos, nounFilter, deliveryFilter]);
+  }, [
+    combos,
+    nounFilter,
+    deliveryFilter,
+    modifierFilter,
+    modifierFilterExclusive,
+  ]);
 
   const sorted = useMemo(() => {
     const col = columns.find((c) => c.key === sortKey);
@@ -175,7 +282,29 @@ export default function SpellTable({
     }
   }
 
-  const filtersActive = nounFilter !== "all" || deliveryFilter !== "all";
+  function toggleGroup(id: ColumnGroupId) {
+    setActiveGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleModifier(id: string) {
+    setModifierFilter((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  const filtersActive =
+    nounFilter !== "all" ||
+    deliveryFilter !== "all" ||
+    modifierFilter.size > 0;
+  const allGroupsActive = activeGroups.size === ALL_GROUP_IDS.length;
 
   return (
     <div className="rounded border border-line bg-white">
@@ -218,12 +347,68 @@ export default function SpellTable({
             ))}
           </select>
         </div>
+        <div className="flex min-w-[12rem] flex-col gap-1">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <span
+              id="filter-modifiers-label"
+              className="text-xs font-medium text-ink/70"
+            >
+              Modifiers
+              {modifierFilter.size > 0 ? ` (${modifierFilter.size})` : ""}
+            </span>
+            <label
+              htmlFor="filter-modifiers-exclusive"
+              className="inline-flex cursor-pointer items-center gap-1.5 text-xs text-ink/65"
+              title={
+                modifierFilterExclusive
+                  ? "Hide spells that include any selected modifier"
+                  : "Show only spells that include all selected modifiers"
+              }
+            >
+              <input
+                id="filter-modifiers-exclusive"
+                name="filter-modifiers-exclusive"
+                type="checkbox"
+                checked={modifierFilterExclusive}
+                onChange={(e) => setModifierFilterExclusive(e.target.checked)}
+                className="size-3.5 rounded border-line accent-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+              />
+              Exclusive
+            </label>
+          </div>
+          <div
+            role="group"
+            aria-labelledby="filter-modifiers-label"
+            className="flex flex-wrap gap-1.5"
+          >
+            {modifierOptions.map((mod) => {
+              const pressed = modifierFilter.has(mod.id);
+              return (
+                <button
+                  key={mod.id}
+                  type="button"
+                  aria-pressed={pressed}
+                  onClick={() => toggleModifier(mod.id)}
+                  className={`rounded border px-2.5 py-1.5 text-xs font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
+                    pressed
+                      ? "border-accent bg-accent/10 text-ink"
+                      : "border-line text-ink/55 hover:border-ink/30 hover:text-ink"
+                  }`}
+                >
+                  {mod.name}
+                </button>
+              );
+            })}
+          </div>
+        </div>
         {filtersActive && (
           <button
             type="button"
             onClick={() => {
               setNounFilter("all");
               setDeliveryFilter("all");
+              setModifierFilter(new Set());
+              setModifierFilterExclusive(false);
             }}
             className="rounded border border-line px-3 py-2 text-xs font-medium text-ink/60 hover:border-ink/30 hover:text-ink"
           >
@@ -249,8 +434,8 @@ export default function SpellTable({
           </div>
           <button
             type="button"
-            disabled={sorted.length === 0}
-            onClick={() => exportCombosTable(sorted, columns, exportFormat)}
+            disabled={sorted.length === 0 || visibleColumns.length === 0}
+            onClick={() => exportCombosTable(sorted, visibleColumns, exportFormat)}
             className="min-h-10 rounded border border-line px-3 py-2 text-xs font-medium text-ink/70 hover:border-ink/30 hover:text-ink disabled:cursor-not-allowed disabled:opacity-50"
           >
             Download
@@ -261,49 +446,96 @@ export default function SpellTable({
         </div>
       </div>
 
-      <div className="overflow-auto">
-        <table className="w-full min-w-[1100px] text-sm">
-          <thead className="sticky top-0 bg-paper">
-            <tr className="border-b border-line">
-              {columns.map((col) => (
-                <th
-                  key={col.key}
-                  onClick={() => toggleSort(col.key)}
-                  className={`cursor-pointer select-none whitespace-nowrap px-3 py-2 font-medium text-ink/70 hover:text-ink ${
-                    col.align === "right" ? "text-right" : "text-left"
-                  }`}
-                >
-                  {col.label}
-                  {sortKey === col.key && (
-                    <span className="ml-1 text-accent">
-                      {sortDir === "asc" ? "\u2191" : "\u2193"}
-                    </span>
-                  )}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {sorted.map((c) => (
-              <tr
-                key={c.key}
-                className="border-b border-line/60 last:border-0 hover:bg-paper/60"
+      <div className="flex flex-wrap items-center gap-2 border-b border-line px-3 py-2.5">
+        <span className="text-xs font-medium uppercase tracking-wide text-ink/50">
+          Column groups
+        </span>
+        <div
+          role="group"
+          aria-label="Column group filters"
+          className="flex flex-wrap gap-1.5"
+        >
+          {COLUMN_GROUPS.map((group) => {
+            const pressed = activeGroups.has(group.id);
+            return (
+              <button
+                key={group.id}
+                type="button"
+                aria-pressed={pressed}
+                onClick={() => toggleGroup(group.id)}
+                className={`rounded border px-2.5 py-1.5 text-xs font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
+                  pressed
+                    ? "border-accent bg-accent/10 text-ink"
+                    : "border-line text-ink/35 hover:border-ink/25 hover:text-ink/55"
+                }`}
               >
-                {columns.map((col) => (
-                  <td
+                {group.label}
+              </button>
+            );
+          })}
+        </div>
+        {!allGroupsActive && (
+          <button
+            type="button"
+            onClick={() => setActiveGroups(new Set(ALL_GROUP_IDS))}
+            className="text-xs font-medium text-ink/55 hover:text-ink"
+          >
+            Show all
+          </button>
+        )}
+      </div>
+
+      <div className="overflow-auto">
+        {visibleColumns.length === 0 ? (
+          <div className="p-6 text-center text-sm text-ink/50">
+            No column groups selected. Enable one or more groups above.
+          </div>
+        ) : (
+          <table className="w-full min-w-[1100px] text-sm">
+            <caption className="sr-only">Generated spell combinations</caption>
+            <thead className="sticky top-0 bg-paper">
+              <tr className="border-b border-line">
+                {visibleColumns.map((col) => (
+                  <th
                     key={col.key}
-                    className={`whitespace-nowrap px-3 py-1.5 font-mono text-[13px] ${
-                      col.align === "right" ? "text-right" : "text-left font-sans"
+                    scope="col"
+                    onClick={() => toggleSort(col.key)}
+                    className={`cursor-pointer select-none whitespace-nowrap px-3 py-2 font-medium text-ink/70 hover:text-ink ${
+                      col.align === "right" ? "text-right" : "text-left"
                     }`}
                   >
-                    {col.format ? col.format(c) : String(col.get(c))}
-                  </td>
+                    {col.label}
+                    {sortKey === col.key && (
+                      <span className="ml-1 text-accent">
+                        {sortDir === "asc" ? "\u2191" : "\u2193"}
+                      </span>
+                    )}
+                  </th>
                 ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
-        {sorted.length === 0 && (
+            </thead>
+            <tbody>
+              {sorted.map((c) => (
+                <tr
+                  key={c.key}
+                  className="border-b border-line/60 last:border-0 hover:bg-paper/60"
+                >
+                  {visibleColumns.map((col) => (
+                    <td
+                      key={col.key}
+                      className={`whitespace-nowrap px-3 py-1.5 font-mono text-[13px] ${
+                        col.align === "right" ? "text-right" : "text-left font-sans"
+                      }`}
+                    >
+                      {col.format ? col.format(c) : String(col.get(c))}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+        {visibleColumns.length > 0 && sorted.length === 0 && (
           <div className="p-6 text-center text-sm text-ink/50">
             No combinations match the current filters.
           </div>

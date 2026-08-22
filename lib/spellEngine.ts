@@ -211,6 +211,16 @@ export function computeSpellCombo(
   const chainLastHopFactor =
     hops === 0 ? 1 : Math.pow(falloffRetain, hops);
 
+  const directDamage = damagePerInstance * instances;
+  const effectDamage =
+    effect.kind === "burn" ? (effect.damage ?? 0) * instances : 0;
+  const totalDamage = directDamage + effectDamage;
+  const damagePerMana = manaCost > 0 ? totalDamage / manaCost : 0;
+  const manaPerSecond = castTime > 0 ? manaCost / castTime : 0;
+  const potencyPerMana = manaCost > 0 ? potencyPool / manaCost : 0;
+  const potencyPerSecond = castTime > 0 ? potencyPool / castTime : 0;
+  const lastHopPotency = potencyPerInstance * chainLastHopFactor;
+
   const key = `${noun.id}|${delivery.id}|${JSON.stringify(
     Object.entries(modifierCounts).sort()
   )}`;
@@ -230,7 +240,13 @@ export function computeSpellCombo(
     chainLastHopFactor,
     potencyPool,
     potencyPerInstance,
+    potencyPerMana,
+    potencyPerSecond,
+    lastHopPotency,
     damagePerInstance,
+    totalDamage,
+    damagePerMana,
+    manaPerSecond,
     effect,
     label: buildLabel(noun, delivery, modifierList),
   };

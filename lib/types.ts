@@ -127,7 +127,19 @@ export type SpellCombo = {
   chainLastHopFactor: number;
   potencyPool: number;
   potencyPerInstance: number;
+  /** Potency pool ÷ mana cost. */
+  potencyPerMana: number;
+  /** Potency pool ÷ cast time. */
+  potencyPerSecond: number;
+  /** Potency retained on the last chain hop. */
+  lastHopPotency: number;
   damagePerInstance: number;
+  /** Direct damage + effect (burn) damage across all instances. */
+  totalDamage: number;
+  /** Total damage ÷ mana cost. */
+  damagePerMana: number;
+  /** Mana cost ÷ cast time. */
+  manaPerSecond: number;
   effect: SpellEffectResult;
   label: string;
 };
