@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { GlobalConfig, SpellCombo } from "@/lib/types";
 import {
   exportCombosTable,
@@ -207,6 +207,8 @@ const columns: ColumnDef[] = [
 
 type FilterOption = { id: string; name: string };
 
+const PAGE_SIZE_OPTIONS = [25, 50, 100, 250, 500] as const;
+
 export default function SpellTable({
   combos,
   config,
@@ -233,6 +235,8 @@ export default function SpellTable({
     () => new Set(ALL_GROUP_IDS)
   );
   const [radarCombo, setRadarCombo] = useState<SpellCombo | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState<number>(50);
 
   const visibleColumns = useMemo(
     () => columns.filter((col) => activeGroups.has(col.group)),
@@ -264,7 +268,8 @@ export default function SpellTable({
     modifierFilterExclusive,
   ]);
 
-  const radarScores = useMemo(() => {
+  const sortRadarScores = useMemo(() => {
+    if (sortKey !== "radarScore") return null;
     const map = new Map<string, { total: number; max: number }>();
     for (const c of filtered) {
       const radar = scoreSpellRadar(c, config);
@@ -274,12 +279,12 @@ export default function SpellTable({
       });
     }
     return map;
-  }, [filtered, config]);
+  }, [filtered, sortKey, config]);
 
   const sorted = useMemo(() => {
     const withValues = filtered.map((c) => {
       if (sortKey === "radarScore") {
-        return { c, v: radarScores.get(c.key)?.total ?? 0 };
+        return { c, v: sortRadarScores?.get(c.key)?.total ?? 0 };
       }
       const col = columns.find((column) => column.key === sortKey);
       return { c, v: col ? col.get(c) : 0 };
@@ -292,7 +297,51 @@ export default function SpellTable({
     });
     if (sortDir === "desc") withValues.reverse();
     return withValues.map((w) => w.c);
-  }, [filtered, sortKey, sortDir, radarScores]);
+  }, [filtered, sortKey, sortDir, sortRadarScores]);
+
+  const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+
+  const paginated = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return sorted.slice(start, start + pageSize);
+  }, [sorted, currentPage, pageSize]);
+
+  const radarScores = useMemo(() => {
+    const map = new Map<string, { total: number; max: number }>(
+      sortRadarScores ?? undefined
+    );
+    for (const c of paginated) {
+      if (map.has(c.key)) continue;
+      const radar = scoreSpellRadar(c, config);
+      map.set(c.key, {
+        total: radar.totalScore,
+        max: radar.maxTotalScore,
+      });
+    }
+    return map;
+  }, [sortRadarScores, paginated, config]);
+
+  const pageStart = sorted.length === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+  const pageEnd = Math.min(currentPage * pageSize, sorted.length);
+
+  useEffect(() => {
+    setPage(1);
+  }, [
+    nounFilter,
+    deliveryFilter,
+    modifierFilter,
+    modifierFilterExclusive,
+    sortKey,
+    sortDir,
+    pageSize,
+  ]);
+
+  useEffect(() => {
+    if (page > totalPages) {
+      setPage(totalPages);
+    }
+  }, [page, totalPages]);
 
   function toggleSort(key: string) {
     if (key === sortKey) {
@@ -462,7 +511,9 @@ export default function SpellTable({
             Download
           </button>
           <span className="self-center text-xs text-ink/50">
-            Showing {sorted.length.toLocaleString()} of {combos.length.toLocaleString()}
+            {sorted.length === 0
+              ? `0 of ${combos.length.toLocaleString()}`
+              : `${pageStart.toLocaleString()}–${pageEnd.toLocaleString()} of ${sorted.length.toLocaleString()} (${combos.length.toLocaleString()} total)`}
           </span>
         </div>
       </div>
@@ -548,7 +599,7 @@ export default function SpellTable({
               </tr>
             </thead>
             <tbody>
-              {sorted.map((c) => {
+              {paginated.map((c) => {
                 const score = radarScores.get(c.key);
                 return (
                 <tr
@@ -614,6 +665,51 @@ export default function SpellTable({
           </div>
         )}
       </div>
+
+      {visibleColumns.length > 0 && sorted.length > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line px-3 py-2.5">
+          <div className="flex items-center gap-2">
+            <label htmlFor="table-page-size" className="text-xs font-medium text-ink/70">
+              Rows per page
+            </label>
+            <select
+              id="table-page-size"
+              name="table-page-size"
+              value={pageSize}
+              onChange={(e) => setPageSize(Number(e.target.value))}
+              className="min-h-9 rounded border border-line bg-white px-2 py-1.5 text-sm focus:border-accent focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+            >
+              {PAGE_SIZE_OPTIONS.map((size) => (
+                <option key={size} value={size}>
+                  {size}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              disabled={currentPage <= 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              className="min-h-9 rounded border border-line px-3 py-1.5 text-xs font-medium text-ink/70 hover:border-ink/30 hover:text-ink disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Previous
+            </button>
+            <span className="font-mono text-xs tabular-nums text-ink/55">
+              Page {currentPage} / {totalPages}
+            </span>
+            <button
+              type="button"
+              disabled={currentPage >= totalPages}
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              className="min-h-9 rounded border border-line px-3 py-1.5 text-xs font-medium text-ink/70 hover:border-ink/30 hover:text-ink disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
 
       <SpellRadarDialog
         combo={radarCombo}

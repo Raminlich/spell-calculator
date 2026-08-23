@@ -79,13 +79,8 @@ function axisScore(
   };
 }
 
-function effectOutputRaw(c: SpellCombo): { value: number; display: string } {
-  if (c.effect.kind === "burn") {
-    const value = c.effect.damage ?? c.effect.potency;
-    return { value, display: `${value.toFixed(2)} dmg` };
-  }
-  const value = c.effect.slowAmountPercent ?? c.effect.potency;
-  return { value, display: `${value.toFixed(1)}%` };
+function modifierStackCount(combo: SpellCombo, modifierId: string): number {
+  return combo.modifierCounts[modifierId] ?? 0;
 }
 
 /** Map delivery name to a stable 0–1 utility score for categorical Delivery. */
@@ -117,7 +112,7 @@ export function scoreSpellRadar(
   combo: SpellCombo,
   config: GlobalConfig
 ): SpellRadarScore {
-  const effectOut = effectOutputRaw(combo);
+  const splitStacks = modifierStackCount(combo, "split");
 
   const axes: RadarAxisResult[] = [
     axisScore(
@@ -140,15 +135,6 @@ export function scoreSpellRadar(
               ? lowerBetter(combo.manaPerSecond, 30)
               : 0.5,
         },
-        {
-          label: "Potency / Mana",
-          raw:
-            combo.manaCost > 0 ? combo.potencyPerMana.toFixed(3) : "—",
-          unit:
-            combo.manaCost > 0
-              ? higherBetter(combo.potencyPerMana, 0.4)
-              : 0,
-        },
       ]
     ),
     axisScore(
@@ -161,26 +147,6 @@ export function scoreSpellRadar(
           label: "Cast Time",
           raw: combo.castTime.toFixed(2) + "s",
           unit: lowerBetter(combo.castTime, 1.5),
-        },
-        {
-          label: "Potency / Second",
-          raw:
-            combo.castTime > 0
-              ? combo.potencyPerSecond.toFixed(2)
-              : "—",
-          unit:
-            combo.castTime > 0
-              ? higherBetter(combo.potencyPerSecond, 15)
-              : 0,
-        },
-        {
-          label: "Mana / Second",
-          raw:
-            combo.castTime > 0 ? combo.manaPerSecond.toFixed(2) : "—",
-          unit:
-            combo.castTime > 0
-              ? higherBetter(combo.manaPerSecond, 25)
-              : 0.5,
         },
       ]
     ),
@@ -205,16 +171,6 @@ export function scoreSpellRadar(
           raw: String(combo.instances),
           unit: higherBetter(combo.instances, 2),
         },
-        {
-          label: "Potency Pool",
-          raw: combo.potencyPool.toFixed(1),
-          unit: higherBetter(combo.potencyPool, 20),
-        },
-        {
-          label: "Potency / Instance",
-          raw: combo.potencyPerInstance.toFixed(2),
-          unit: higherBetter(combo.potencyPerInstance, 12),
-        },
       ]
     ),
     axisScore(
@@ -231,22 +187,6 @@ export function scoreSpellRadar(
             combo.manaCost > 0
               ? higherBetter(combo.damagePerMana, 0.8)
               : 0,
-        },
-        {
-          label: "Last Hop Potency",
-          raw:
-            combo.chainTargets > 1
-              ? combo.lastHopPotency.toFixed(2)
-              : "—",
-          unit:
-            combo.chainTargets > 1
-              ? higherBetter(combo.lastHopPotency, 8)
-              : higherBetter(combo.potencyPerInstance, 12),
-        },
-        {
-          label: "Effect Potency",
-          raw: combo.effect.potency.toFixed(2),
-          unit: higherBetter(combo.effect.potency, 1.5),
         },
       ]
     ),
@@ -272,6 +212,11 @@ export function scoreSpellRadar(
           unit: higherBetter(combo.chainTargets, 2),
         },
         {
+          label: "Split",
+          raw: splitStacks > 0 ? `${splitStacks} stack${splitStacks > 1 ? "s" : ""}` : "none",
+          unit: splitStacks > 0 ? higherBetter(splitStacks, 1) : 0,
+        },
+        {
           label: "Effect",
           raw: combo.effect.name,
           unit: effectCategoryScore(combo.effect.kind),
@@ -288,14 +233,6 @@ export function scoreSpellRadar(
           label: "Duration",
           raw: combo.effect.duration.toFixed(1) + "s",
           unit: higherBetter(combo.effect.duration, 5),
-        },
-        {
-          label: "Burn Damage / Slow %",
-          raw: effectOut.display,
-          unit: higherBetter(
-            effectOut.value,
-            combo.effect.kind === "burn" ? 8 : 40
-          ),
         },
         {
           label: "Effect Potency",
