@@ -53,7 +53,7 @@ export const defaultModifierVerbs: ModifierVerb[] = [
     id: "split",
     name: "Split",
     description:
-      "Divides the spell into multiple instances. Potency is distributed between all instances.",
+      "Divides the spell into multiple instances. Damage and effect potency are distributed between all instances.",
     manaCost: 8,
     castTime: 0.3,
     repeatAllowed: true,

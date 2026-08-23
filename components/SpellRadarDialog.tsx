@@ -47,7 +47,7 @@ export default function SpellRadarDialog({
       onClick={(e) => {
         if (e.target === dialogRef.current) onClose();
       }}
-      className="fixed left-1/2 top-1/2 m-0 w-[min(100%,28rem)] max-h-[min(100%,90vh)] -translate-x-1/2 -translate-y-1/2 overflow-auto rounded border border-line bg-white p-0 text-ink shadow-lg backdrop:bg-ink/40"
+      className="fixed left-1/2 top-1/2 m-0 w-[min(100%,28rem)] max-h-[min(100%,90vh)] -translate-x-1/2 -translate-y-1/2 overflow-auto rounded border border-line bg-surface p-0 text-ink shadow-lg backdrop:bg-ink/40"
     >
       {combo && radar && (
         <div className="flex flex-col">

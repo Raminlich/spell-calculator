@@ -35,13 +35,13 @@ export const RADAR_AXIS_OPTIONS: {
   label: string;
   shortLabel: string;
 }[] = [
-  { id: "cost", label: "Cost", shortLabel: "Cost" },
-  { id: "time", label: "Time", shortLabel: "Time" },
+  { id: "cost", label: "Affordability", shortLabel: "Afford." },
+  { id: "time", label: "Speed", shortLabel: "Speed" },
   { id: "impact", label: "Impact", shortLabel: "Impact" },
   { id: "efficiency", label: "Efficiency", shortLabel: "Eff." },
   {
     id: "deliveryControl",
-    label: "Delivery & Control",
+    label: "Control",
     shortLabel: "Control",
   },
   { id: "statusEffect", label: "Status Effect", shortLabel: "Status" },
@@ -112,24 +112,13 @@ function modifierStackCount(combo: SpellCombo, modifierId: string): number {
   return combo.modifierCounts[modifierId] ?? 0;
 }
 
-/** Map delivery name to a stable 0–1 utility score for categorical Delivery. */
-function deliveryCategoryScore(name: string): number {
-  const key = name.trim().toLowerCase();
-  if (!key) return 0.4;
-  let hash = 0;
-  for (let i = 0; i < key.length; i++) {
-    hash = (hash * 31 + key.charCodeAt(i)) >>> 0;
-  }
-  return 0.35 + (hash % 66) / 100;
-}
-
-/** Map effect kind to a categorical baseline. */
+/** Map effect kind to a categorical baseline for delivery/control utility. */
 function effectCategoryScore(kind: SpellCombo["effect"]["kind"]): number {
   switch (kind) {
-    case "burn":
-      return 0.75;
     case "slow":
-      return 0.65;
+      return 0.75;
+    case "burn":
+      return 0.0;
     default: {
       const _exhaustive: never = kind;
       return _exhaustive;
@@ -146,8 +135,8 @@ export function scoreSpellRadar(
   const axes: RadarAxisResult[] = [
     axisScore(
       "cost",
-      "Cost",
-      "Cost",
+      "Affordability",
+      "Afford.",
       config.radarMaxCost,
       [
         {
@@ -168,8 +157,8 @@ export function scoreSpellRadar(
     ),
     axisScore(
       "time",
-      "Time",
-      "Time",
+      "Speed",
+      "Speed",
       config.radarMaxTime,
       [
         {
@@ -195,11 +184,6 @@ export function scoreSpellRadar(
           raw: combo.damagePerInstance.toFixed(2),
           unit: higherBetter(combo.damagePerInstance, 15),
         },
-        {
-          label: "Instances",
-          raw: String(combo.instances),
-          unit: higherBetter(combo.instances, 2),
-        },
       ]
     ),
     axisScore(
@@ -221,15 +205,10 @@ export function scoreSpellRadar(
     ),
     axisScore(
       "deliveryControl",
-      "Delivery & Control",
+      "Control",
       "Control",
       config.radarMaxDeliveryControl,
       [
-        {
-          label: "Delivery",
-          raw: combo.delivery.name,
-          unit: deliveryCategoryScore(combo.delivery.name),
-        },
         {
           label: "Seek",
           raw: combo.seeksTarget ? "yes" : "no",

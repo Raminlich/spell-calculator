@@ -437,8 +437,8 @@ export default function SpellTable({
   return (
     <div className="rounded border border-line bg-white">
       <div className="flex flex-wrap items-end gap-4 border-b border-line px-3 py-3">
-        <div className="flex flex-col gap-1">
-          <label htmlFor="filter-noun" className="text-xs font-medium text-ink/70">
+        <div className="flex flex-col gap-0.5">
+          <label htmlFor="filter-noun" className="text-[10px] font-medium text-ink/70">
             Noun
           </label>
           <select
@@ -446,7 +446,7 @@ export default function SpellTable({
             name="filter-noun"
             value={nounFilter}
             onChange={(e) => setNounFilter(e.target.value)}
-            className="min-h-10 rounded border border-line bg-white px-2.5 py-2 text-sm focus:border-accent focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+            className="min-h-6 rounded border border-line bg-surface px-1.5 py-1 text-xs focus:border-accent focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
           >
             <option value="all">All nouns</option>
             {nounOptions.map((n) => (
@@ -456,8 +456,8 @@ export default function SpellTable({
             ))}
           </select>
         </div>
-        <div className="flex flex-col gap-1">
-          <label htmlFor="filter-delivery" className="text-xs font-medium text-ink/70">
+        <div className="flex flex-col gap-0.5">
+          <label htmlFor="filter-delivery" className="text-[10px] font-medium text-ink/70">
             Delivery
           </label>
           <select
@@ -465,7 +465,7 @@ export default function SpellTable({
             name="filter-delivery"
             value={deliveryFilter}
             onChange={(e) => setDeliveryFilter(e.target.value)}
-            className="min-h-10 rounded border border-line bg-white px-2.5 py-2 text-sm focus:border-accent focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+            className="min-h-6 rounded border border-line bg-surface px-1.5 py-1 text-xs focus:border-accent focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
           >
             <option value="all">All deliveries</option>
             {deliveryOptions.map((d) => (
@@ -538,15 +538,15 @@ export default function SpellTable({
               setModifierFilter(new Set());
               setModifierFilterExclusive(false);
             }}
-            className="rounded border border-line px-3 py-2 text-xs font-medium text-ink/60 hover:border-ink/30 hover:text-ink"
+            className="rounded border border-line px-1.5 py-1 text-[10px] font-medium text-ink/60 hover:border-ink/30 hover:text-ink"
           >
             Clear filters
           </button>
         )}
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-0.5">
           <label
             htmlFor="radar-search-axis"
-            className="text-xs font-medium text-ink/70"
+            className="text-[10px] font-medium text-ink/70"
           >
             Radar axis
           </label>
@@ -560,7 +560,7 @@ export default function SpellTable({
                 radarSearchRank
               )
             }
-            className="min-h-10 rounded border border-line bg-white px-2.5 py-2 text-sm focus:border-accent focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+            className="min-h-8 rounded border border-line bg-surface px-2 py-1.5 text-xs focus:border-accent focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
           >
             <option value="none">—</option>
             <option value="total">Total score</option>
@@ -571,10 +571,10 @@ export default function SpellTable({
             ))}
           </select>
         </div>
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-0.5">
           <label
             htmlFor="radar-search-rank"
-            className="text-xs font-medium text-ink/70"
+            className="text-[10px] font-medium text-ink/70"
           >
             Rank
           </label>
@@ -589,7 +589,7 @@ export default function SpellTable({
                 e.target.value as RadarSearchRank
               )
             }
-            className="min-h-10 rounded border border-line bg-white px-2.5 py-2 text-sm focus:border-accent focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-50"
+            className="min-h-8 rounded border border-line bg-surface px-2 py-1.5 text-xs focus:border-accent focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-50"
           >
             <option value="best">Best first</option>
             <option value="worst">Worst first</option>

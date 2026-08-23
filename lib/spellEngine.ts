@@ -202,7 +202,13 @@ export function computeSpellCombo(
     noun.potency > 0 ? damagePotencyPerInstance / noun.potency : 1;
   const damagePerInstance = noun.damage * damageScale;
 
-  const effect = computeEffectResult(noun.statusEffect, effectStrengthFactor);
+  // Split distributes effect strength across instances, same as damage potency.
+  const effectStrengthPerInstance =
+    instances > 0 ? effectStrengthFactor / instances : effectStrengthFactor;
+  const effect = computeEffectResult(
+    noun.statusEffect,
+    effectStrengthPerInstance
+  );
   effect.duration *= durationMultiplier;
 
   const chainTargets = 1 + chainExtraTargets;

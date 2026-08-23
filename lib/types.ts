@@ -90,15 +90,15 @@ export type GlobalConfig = {
   maxRepeatPerModifier: number; // cap on how many times a single modifier can stack
   maxTotalModifiers: number; // cap on total modifier count in one spell
   minTotalModifiers: number; // floor on total modifier count in one spell
-  /** Radar axis max weight: Cost (accessibility & sustainability). */
+  /** Radar axis max weight: Affordability (accessibility & sustainability). */
   radarMaxCost: number;
-  /** Radar axis max weight: Time (tempo & DPS). */
+  /** Radar axis max weight: Speed (tempo & DPS). */
   radarMaxTime: number;
   /** Radar axis max weight: Impact (raw burst & damage). */
   radarMaxImpact: number;
   /** Radar axis max weight: Efficiency (optimization & value). */
   radarMaxEfficiency: number;
-  /** Radar axis max weight: Delivery & Control (reliability & utility). */
+  /** Radar axis max weight: Control (reliability & utility). */
   radarMaxDeliveryControl: number;
   /** Radar axis max weight: Status Effect (DoT / debuffing). */
   radarMaxStatusEffect: number;
@@ -110,8 +110,10 @@ export type SpellEffectResult = {
   name: string;
   kind: StatusEffect["kind"];
   /**
-   * Effect strength after bleed (e.g. 1.5 = 50% stronger than base).
+   * Effect strength after bleed and instance distribution
+   * (e.g. 1.5 = 50% stronger than base, before / after Split).
    * Final burn damage / slow % = base value × (potency / baseStatusPotency).
+   * Values are per instance when Split (or multi-instance delivery) is used.
    */
   potency: number;
   duration: number;

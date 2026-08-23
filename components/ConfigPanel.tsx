@@ -106,7 +106,7 @@ export default function ConfigPanel({
         </h3>
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
           <Field
-            label="Cost"
+            label="Affordability"
             hint="Accessibility & sustainability"
             value={config.radarMaxCost}
             step={1}
@@ -114,7 +114,7 @@ export default function ConfigPanel({
             onChange={(v) => set("radarMaxCost", Math.max(0, v))}
           />
           <Field
-            label="Time"
+            label="Speed"
             hint="Tempo & DPS"
             value={config.radarMaxTime}
             step={1}
@@ -138,7 +138,7 @@ export default function ConfigPanel({
             onChange={(v) => set("radarMaxEfficiency", Math.max(0, v))}
           />
           <Field
-            label="Delivery & Control"
+            label="Control"
             hint="Reliability & utility"
             value={config.radarMaxDeliveryControl}
             step={1}
