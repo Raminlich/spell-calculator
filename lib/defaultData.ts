@@ -114,6 +114,20 @@ export const defaultGlobalConfig: GlobalConfig = {
   radarMaxEfficiency: 10,
   radarMaxDeliveryControl: 10,
   radarMaxStatusEffect: 10,
+  radarEffectScoreSlow: 0.75,
+  radarEffectScoreBurn: 0,
+  radarSeekScoreYes: 1,
+  radarSeekScoreNo: 0,
+  radarHalfManaCost: 40,
+  radarHalfManaPerSecond: 30,
+  radarHalfCastTime: 1.5,
+  radarHalfTotalDamage: 40,
+  radarHalfDamagePerInstance: 15,
+  radarHalfDamagePerMana: 0.8,
+  radarHalfChainTargets: 2,
+  radarHalfSplitStacks: 1,
+  radarHalfEffectDuration: 5,
+  radarHalfEffectPotency: 1.5,
 };
 
 // Safety cap so the UI never tries to render an unreasonable number of rows.

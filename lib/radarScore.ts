@@ -112,13 +112,16 @@ function modifierStackCount(combo: SpellCombo, modifierId: string): number {
   return combo.modifierCounts[modifierId] ?? 0;
 }
 
-/** Map effect kind to a categorical baseline for delivery/control utility. */
-function effectCategoryScore(kind: SpellCombo["effect"]["kind"]): number {
+/** Map effect kind to a categorical baseline for control utility. */
+function effectCategoryScore(
+  kind: SpellCombo["effect"]["kind"],
+  config: GlobalConfig
+): number {
   switch (kind) {
     case "slow":
-      return 0.75;
+      return clamp01(config.radarEffectScoreSlow);
     case "burn":
-      return 0.0;
+      return clamp01(config.radarEffectScoreBurn);
     default: {
       const _exhaustive: never = kind;
       return _exhaustive;
@@ -142,7 +145,7 @@ export function scoreSpellRadar(
         {
           label: "Mana Cost",
           raw: combo.manaCost.toFixed(1),
-          unit: lowerBetter(combo.manaCost, 40),
+          unit: lowerBetter(combo.manaCost, config.radarHalfManaCost),
         },
         {
           label: "Mana / Second",
@@ -150,7 +153,7 @@ export function scoreSpellRadar(
             combo.castTime > 0 ? combo.manaPerSecond.toFixed(2) : "—",
           unit:
             combo.castTime > 0
-              ? lowerBetter(combo.manaPerSecond, 30)
+              ? lowerBetter(combo.manaPerSecond, config.radarHalfManaPerSecond)
               : 0.5,
         },
       ]
@@ -164,7 +167,7 @@ export function scoreSpellRadar(
         {
           label: "Cast Time",
           raw: combo.castTime.toFixed(2) + "s",
-          unit: lowerBetter(combo.castTime, 1.5),
+          unit: lowerBetter(combo.castTime, config.radarHalfCastTime),
         },
       ]
     ),
@@ -177,12 +180,15 @@ export function scoreSpellRadar(
         {
           label: "Total Damage",
           raw: combo.totalDamage.toFixed(2),
-          unit: higherBetter(combo.totalDamage, 40),
+          unit: higherBetter(combo.totalDamage, config.radarHalfTotalDamage),
         },
         {
           label: "Damage / Instance",
           raw: combo.damagePerInstance.toFixed(2),
-          unit: higherBetter(combo.damagePerInstance, 15),
+          unit: higherBetter(
+            combo.damagePerInstance,
+            config.radarHalfDamagePerInstance
+          ),
         },
       ]
     ),
@@ -198,7 +204,7 @@ export function scoreSpellRadar(
             combo.manaCost > 0 ? combo.damagePerMana.toFixed(3) : "—",
           unit:
             combo.manaCost > 0
-              ? higherBetter(combo.damagePerMana, 0.8)
+              ? higherBetter(combo.damagePerMana, config.radarHalfDamagePerMana)
               : 0,
         },
       ]
@@ -212,22 +218,27 @@ export function scoreSpellRadar(
         {
           label: "Seek",
           raw: combo.seeksTarget ? "yes" : "no",
-          unit: combo.seeksTarget ? 1 : 0,
+          unit: combo.seeksTarget
+            ? clamp01(config.radarSeekScoreYes)
+            : clamp01(config.radarSeekScoreNo),
         },
         {
           label: "Targets",
           raw: String(combo.chainTargets),
-          unit: higherBetter(combo.chainTargets, 2),
+          unit: higherBetter(combo.chainTargets, config.radarHalfChainTargets),
         },
         {
           label: "Split",
           raw: splitStacks > 0 ? `${splitStacks} stack${splitStacks > 1 ? "s" : ""}` : "none",
-          unit: splitStacks > 0 ? higherBetter(splitStacks, 1) : 0,
+          unit:
+            splitStacks > 0
+              ? higherBetter(splitStacks, config.radarHalfSplitStacks)
+              : 0,
         },
         {
           label: "Effect",
           raw: combo.effect.name,
-          unit: effectCategoryScore(combo.effect.kind),
+          unit: effectCategoryScore(combo.effect.kind, config),
         },
       ]
     ),
@@ -240,12 +251,18 @@ export function scoreSpellRadar(
         {
           label: "Duration",
           raw: combo.effect.duration.toFixed(1) + "s",
-          unit: higherBetter(combo.effect.duration, 5),
+          unit: higherBetter(
+            combo.effect.duration,
+            config.radarHalfEffectDuration
+          ),
         },
         {
           label: "Effect Potency",
           raw: combo.effect.potency.toFixed(2),
-          unit: higherBetter(combo.effect.potency, 1.5),
+          unit: higherBetter(
+            combo.effect.potency,
+            config.radarHalfEffectPotency
+          ),
         },
       ]
     ),

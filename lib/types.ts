@@ -102,6 +102,34 @@ export type GlobalConfig = {
   radarMaxDeliveryControl: number;
   /** Radar axis max weight: Status Effect (DoT / debuffing). */
   radarMaxStatusEffect: number;
+  /** Control axis: categorical score when effect kind is slow (0–1). */
+  radarEffectScoreSlow: number;
+  /** Control axis: categorical score when effect kind is burn (0–1). */
+  radarEffectScoreBurn: number;
+  /** Control axis: categorical score when Seek is present (0–1). */
+  radarSeekScoreYes: number;
+  /** Control axis: categorical score when Seek is absent (0–1). */
+  radarSeekScoreNo: number;
+  /** Affordability: soft-curve midpoint for mana cost (lowerBetter). */
+  radarHalfManaCost: number;
+  /** Affordability: soft-curve midpoint for mana/second (lowerBetter). */
+  radarHalfManaPerSecond: number;
+  /** Speed: soft-curve midpoint for cast time (lowerBetter). */
+  radarHalfCastTime: number;
+  /** Impact: soft-curve midpoint for total damage (higherBetter). */
+  radarHalfTotalDamage: number;
+  /** Impact: soft-curve midpoint for damage/instance (higherBetter). */
+  radarHalfDamagePerInstance: number;
+  /** Efficiency: soft-curve midpoint for damage/mana (higherBetter). */
+  radarHalfDamagePerMana: number;
+  /** Control: soft-curve midpoint for chain targets (higherBetter). */
+  radarHalfChainTargets: number;
+  /** Control: soft-curve midpoint for Split stacks (higherBetter). */
+  radarHalfSplitStacks: number;
+  /** Status Effect: soft-curve midpoint for duration (higherBetter). */
+  radarHalfEffectDuration: number;
+  /** Status Effect: soft-curve midpoint for effect potency (higherBetter). */
+  radarHalfEffectPotency: number;
 };
 
 export type ModifierCount = Record<string, number>; // modifierId -> stack count

@@ -8,6 +8,7 @@ import { workspaceHref } from "@/lib/workspaceId";
 const links = [
   { href: "/", label: "Calculator" },
   { href: "/components", label: "Components" },
+  { href: "/radar", label: "Radar" },
 ] as const;
 
 export default function AppNav() {

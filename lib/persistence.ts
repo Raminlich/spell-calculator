@@ -77,6 +77,20 @@ const OPTIONAL_RADAR_KEYS: (keyof GlobalConfig)[] = [
   "radarMaxEfficiency",
   "radarMaxDeliveryControl",
   "radarMaxStatusEffect",
+  "radarEffectScoreSlow",
+  "radarEffectScoreBurn",
+  "radarSeekScoreYes",
+  "radarSeekScoreNo",
+  "radarHalfManaCost",
+  "radarHalfManaPerSecond",
+  "radarHalfCastTime",
+  "radarHalfTotalDamage",
+  "radarHalfDamagePerInstance",
+  "radarHalfDamagePerMana",
+  "radarHalfChainTargets",
+  "radarHalfSplitStacks",
+  "radarHalfEffectDuration",
+  "radarHalfEffectPotency",
 ];
 
 function normalizeGlobalConfig(value: unknown): GlobalConfig | null {
