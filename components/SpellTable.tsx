@@ -6,7 +6,13 @@ import {
   exportCombosTable,
   type TableExportFormat,
 } from "@/lib/tableExport";
-import { scoreSpellRadar } from "@/lib/radarScore";
+import {
+  parseRadarAxisSortKey,
+  radarAxisSortKey,
+  RADAR_AXIS_OPTIONS,
+  scoreSpellRadar,
+  type RadarAxisId,
+} from "@/lib/radarScore";
 import SpellRadarDialog from "@/components/SpellRadarDialog";
 
 type ColumnGroupId =
@@ -207,6 +213,9 @@ const columns: ColumnDef[] = [
 
 type FilterOption = { id: string; name: string };
 
+type RadarSearchAxis = RadarAxisId | "total" | "none";
+type RadarSearchRank = "best" | "worst";
+
 const PAGE_SIZE_OPTIONS = [25, 50, 100, 250, 500] as const;
 
 export default function SpellTable({
@@ -237,6 +246,10 @@ export default function SpellTable({
   const [radarCombo, setRadarCombo] = useState<SpellCombo | null>(null);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState<number>(50);
+  const [radarSearchAxis, setRadarSearchAxis] = useState<RadarSearchAxis>("none");
+  const [radarSearchRank, setRadarSearchRank] = useState<RadarSearchRank>("best");
+
+  const activeRadarAxisId = parseRadarAxisSortKey(sortKey);
 
   const visibleColumns = useMemo(
     () => columns.filter((col) => activeGroups.has(col.group)),
@@ -268,23 +281,47 @@ export default function SpellTable({
     modifierFilterExclusive,
   ]);
 
-  const sortRadarScores = useMemo(() => {
-    if (sortKey !== "radarScore") return null;
-    const map = new Map<string, { total: number; max: number }>();
+  const needsFullRadarSort =
+    sortKey === "radarScore" || activeRadarAxisId !== null;
+
+  const fullRadarScores = useMemo(() => {
+    if (!needsFullRadarSort) return null;
+    const map = new Map<
+      string,
+      {
+        total: number;
+        max: number;
+        axes: Map<RadarAxisId, { score: number; normalized: number }>;
+      }
+    >();
     for (const c of filtered) {
       const radar = scoreSpellRadar(c, config);
       map.set(c.key, {
         total: radar.totalScore,
         max: radar.maxTotalScore,
+        axes: new Map(
+          radar.axes.map((axis) => [
+            axis.id,
+            { score: axis.score, normalized: axis.normalized },
+          ])
+        ),
       });
     }
     return map;
-  }, [filtered, sortKey, config]);
+  }, [filtered, needsFullRadarSort, config]);
 
   const sorted = useMemo(() => {
     const withValues = filtered.map((c) => {
       if (sortKey === "radarScore") {
-        return { c, v: sortRadarScores?.get(c.key)?.total ?? 0 };
+        return { c, v: fullRadarScores?.get(c.key)?.total ?? 0 };
+      }
+      if (activeRadarAxisId) {
+        return {
+          c,
+          v:
+            fullRadarScores?.get(c.key)?.axes.get(activeRadarAxisId)
+              ?.normalized ?? 0,
+        };
       }
       const col = columns.find((column) => column.key === sortKey);
       return { c, v: col ? col.get(c) : 0 };
@@ -297,7 +334,7 @@ export default function SpellTable({
     });
     if (sortDir === "desc") withValues.reverse();
     return withValues.map((w) => w.c);
-  }, [filtered, sortKey, sortDir, sortRadarScores]);
+  }, [filtered, sortKey, sortDir, fullRadarScores, activeRadarAxisId]);
 
   const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
   const currentPage = Math.min(page, totalPages);
@@ -308,9 +345,12 @@ export default function SpellTable({
   }, [sorted, currentPage, pageSize]);
 
   const radarScores = useMemo(() => {
-    const map = new Map<string, { total: number; max: number }>(
-      sortRadarScores ?? undefined
-    );
+    const map = new Map<string, { total: number; max: number }>();
+    if (fullRadarScores) {
+      for (const [key, value] of fullRadarScores) {
+        map.set(key, { total: value.total, max: value.max });
+      }
+    }
     for (const c of paginated) {
       if (map.has(c.key)) continue;
       const radar = scoreSpellRadar(c, config);
@@ -320,7 +360,7 @@ export default function SpellTable({
       });
     }
     return map;
-  }, [sortRadarScores, paginated, config]);
+  }, [fullRadarScores, paginated, config]);
 
   const pageStart = sorted.length === 0 ? 0 : (currentPage - 1) * pageSize + 1;
   const pageEnd = Math.min(currentPage * pageSize, sorted.length);
@@ -343,7 +383,21 @@ export default function SpellTable({
     }
   }, [page, totalPages]);
 
+  function applyRadarSearch(axis: RadarSearchAxis, rank: RadarSearchRank) {
+    setRadarSearchAxis(axis);
+    setRadarSearchRank(rank);
+    if (axis === "none") return;
+    const dir = rank === "best" ? "desc" : "asc";
+    if (axis === "total") {
+      setSortKey("radarScore");
+    } else {
+      setSortKey(radarAxisSortKey(axis));
+    }
+    setSortDir(dir);
+  }
+
   function toggleSort(key: string) {
+    setRadarSearchAxis("none");
     if (key === sortKey) {
       setSortDir((d) => (d === "asc" ? "desc" : "asc"));
     } else {
@@ -375,6 +429,10 @@ export default function SpellTable({
     deliveryFilter !== "all" ||
     modifierFilter.size > 0;
   const allGroupsActive = activeGroups.size === ALL_GROUP_IDS.length;
+  const radarSearchActive = radarSearchAxis !== "none";
+  const activeRadarAxisLabel = activeRadarAxisId
+    ? RADAR_AXIS_OPTIONS.find((axis) => axis.id === activeRadarAxisId)?.shortLabel
+    : null;
 
   return (
     <div className="rounded border border-line bg-white">
@@ -485,6 +543,67 @@ export default function SpellTable({
             Clear filters
           </button>
         )}
+        <div className="flex flex-col gap-1">
+          <label
+            htmlFor="radar-search-axis"
+            className="text-xs font-medium text-ink/70"
+          >
+            Radar axis
+          </label>
+          <select
+            id="radar-search-axis"
+            name="radar-search-axis"
+            value={radarSearchAxis}
+            onChange={(e) =>
+              applyRadarSearch(
+                e.target.value as RadarSearchAxis,
+                radarSearchRank
+              )
+            }
+            className="min-h-10 rounded border border-line bg-white px-2.5 py-2 text-sm focus:border-accent focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+          >
+            <option value="none">—</option>
+            <option value="total">Total score</option>
+            {RADAR_AXIS_OPTIONS.map((axis) => (
+              <option key={axis.id} value={axis.id}>
+                {axis.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="flex flex-col gap-1">
+          <label
+            htmlFor="radar-search-rank"
+            className="text-xs font-medium text-ink/70"
+          >
+            Rank
+          </label>
+          <select
+            id="radar-search-rank"
+            name="radar-search-rank"
+            value={radarSearchRank}
+            disabled={!radarSearchActive}
+            onChange={(e) =>
+              applyRadarSearch(
+                radarSearchAxis,
+                e.target.value as RadarSearchRank
+              )
+            }
+            className="min-h-10 rounded border border-line bg-white px-2.5 py-2 text-sm focus:border-accent focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <option value="best">Best first</option>
+            <option value="worst">Worst first</option>
+          </select>
+        </div>
+        {radarSearchActive && (
+          <button
+            type="button"
+            onClick={() => applyRadarSearch("none", radarSearchRank)}
+            className="rounded border border-line px-2 py-1 text-[10px] font-medium text-ink/60 hover:border-ink/30 hover:text-ink"
+          >
+            Clear radar sort
+          </button>
+        )}
         <div className="ms-auto flex flex-wrap items-end gap-2">
           <div className="flex flex-col gap-1">
             <label htmlFor="export-format" className="text-xs font-medium text-ink/70">
@@ -572,8 +691,8 @@ export default function SpellTable({
                   onClick={() => toggleSort("radarScore")}
                   className="cursor-pointer select-none whitespace-nowrap px-2 py-2 text-left font-medium text-ink/70 hover:text-ink"
                 >
-                  Score
-                  {sortKey === "radarScore" && (
+                  {activeRadarAxisLabel ?? "Score"}
+                  {(sortKey === "radarScore" || activeRadarAxisId) && (
                     <span className="ml-1 text-accent">
                       {sortDir === "asc" ? "\u2191" : "\u2193"}
                     </span>
@@ -601,6 +720,15 @@ export default function SpellTable({
             <tbody>
               {paginated.map((c) => {
                 const score = radarScores.get(c.key);
+                const axisScore = activeRadarAxisId
+                  ? fullRadarScores?.get(c.key)?.axes.get(activeRadarAxisId)
+                  : null;
+                const displayScore =
+                  sortKey === "radarScore"
+                    ? score
+                    : axisScore
+                      ? { total: axisScore.score, max: 0, normalized: axisScore.normalized }
+                      : score;
                 return (
                 <tr
                   key={c.key}
@@ -634,12 +762,14 @@ export default function SpellTable({
                       <span
                         className="font-mono text-[13px] tabular-nums text-ink/80"
                         title={
-                          score
-                            ? `Score ${score.total.toFixed(1)} / ${score.max.toFixed(0)}`
+                          displayScore
+                            ? activeRadarAxisId
+                              ? `${activeRadarAxisLabel} ${displayScore.total.toFixed(1)} (${(displayScore.normalized * 100).toFixed(0)}%)`
+                              : `Score ${displayScore.total.toFixed(1)} / ${displayScore.max.toFixed(0)}`
                             : undefined
                         }
                       >
-                        {score ? score.total.toFixed(1) : "—"}
+                        {displayScore ? displayScore.total.toFixed(1) : "—"}
                       </span>
                     </div>
                   </td>

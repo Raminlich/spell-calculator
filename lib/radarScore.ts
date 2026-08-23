@@ -30,6 +30,35 @@ export type SpellRadarScore = {
   normalizedTotal: number;
 };
 
+export const RADAR_AXIS_OPTIONS: {
+  id: RadarAxisId;
+  label: string;
+  shortLabel: string;
+}[] = [
+  { id: "cost", label: "Cost", shortLabel: "Cost" },
+  { id: "time", label: "Time", shortLabel: "Time" },
+  { id: "impact", label: "Impact", shortLabel: "Impact" },
+  { id: "efficiency", label: "Efficiency", shortLabel: "Eff." },
+  {
+    id: "deliveryControl",
+    label: "Delivery & Control",
+    shortLabel: "Control",
+  },
+  { id: "statusEffect", label: "Status Effect", shortLabel: "Status" },
+];
+
+const RADAR_AXIS_SORT_PREFIX = "radarAxis:";
+
+export function radarAxisSortKey(axisId: RadarAxisId): string {
+  return `${RADAR_AXIS_SORT_PREFIX}${axisId}`;
+}
+
+export function parseRadarAxisSortKey(sortKey: string): RadarAxisId | null {
+  if (!sortKey.startsWith(RADAR_AXIS_SORT_PREFIX)) return null;
+  const axisId = sortKey.slice(RADAR_AXIS_SORT_PREFIX.length) as RadarAxisId;
+  return RADAR_AXIS_OPTIONS.some((a) => a.id === axisId) ? axisId : null;
+}
+
 /** Soft curve: value = k → 0.5. Higher values approach 1. */
 function higherBetter(value: number, halfAt: number): number {
   if (!Number.isFinite(value) || value <= 0) return 0;
