@@ -3,6 +3,7 @@
 import { useRef, useState, type ChangeEvent } from "react";
 import { useSpellConfig } from "@/components/SpellConfigContext";
 import { formatSavedAt } from "@/lib/persistence";
+import { copyWorkspaceUrl } from "@/lib/workspaceId";
 
 type SaveControlsProps = {
   /** Short context label shown next to status, e.g. "Calculator" or "Components". */
@@ -17,24 +18,40 @@ export default function SaveControls({ contextLabel }: SaveControlsProps) {
     importWorkspace,
     lastSavedAt,
     hydrated,
+    workspaceId,
+    persistenceMode,
   } = useSpellConfig();
   const [message, setMessage] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   function flash(text: string) {
     setMessage(text);
-    window.setTimeout(() => setMessage(null), 2500);
+    window.setTimeout(() => setMessage(null), 2800);
   }
 
-  function handleSave() {
-    const savedAt = saveWorkspace();
-    flash(`Saved ${contextLabel.toLowerCase()} workspace`);
-    void savedAt;
+  async function handleSave() {
+    setBusy(true);
+    try {
+      const result = await saveWorkspace();
+      if (result?.mode === "server") {
+        flash(`Saved ${contextLabel.toLowerCase()} workspace to cloud`);
+      } else if (result) {
+        flash("Saved locally — cloud unavailable");
+      }
+    } finally {
+      setBusy(false);
+    }
   }
 
-  function handleLoad() {
-    const ok = loadWorkspace();
-    flash(ok ? "Loaded saved workspace" : "No saved workspace found");
+  async function handleLoad() {
+    setBusy(true);
+    try {
+      const ok = await loadWorkspace();
+      flash(ok ? "Loaded workspace" : "No saved workspace found");
+    } finally {
+      setBusy(false);
+    }
   }
 
   function handleExport() {
@@ -50,60 +67,90 @@ export default function SaveControls({ contextLabel }: SaveControlsProps) {
     const file = event.target.files?.[0];
     event.target.value = "";
     if (!file) return;
-    const ok = await importWorkspace(file);
-    flash(ok ? "Imported workspace from JSON" : "Invalid or unreadable JSON file");
+
+    setBusy(true);
+    try {
+      const ok = await importWorkspace(file);
+      flash(ok ? "Imported workspace from JSON" : "Invalid or unreadable JSON file");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleCopyLink() {
+    if (!workspaceId) return;
+    const url = copyWorkspaceUrl(workspaceId);
+    try {
+      await navigator.clipboard.writeText(url);
+      flash("Copied workspace link");
+    } catch {
+      flash("Could not copy link");
+    }
   }
 
   const savedLabel = formatSavedAt(lastSavedAt);
+  const disabled = !hydrated || busy;
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <button
-        type="button"
-        onClick={handleSave}
-        disabled={!hydrated}
-        className="rounded bg-ink px-3 py-1.5 text-xs font-medium text-paper hover:bg-ink/90 disabled:opacity-50"
-      >
-        Save
-      </button>
-      <button
-        type="button"
-        onClick={handleLoad}
-        disabled={!hydrated}
-        className="rounded border border-line px-3 py-1.5 text-xs font-medium text-ink/70 hover:border-ink/30 hover:text-ink disabled:opacity-50"
-      >
-        Load
-      </button>
-      <button
-        type="button"
-        onClick={handleExport}
-        disabled={!hydrated}
-        className="rounded border border-line px-3 py-1.5 text-xs font-medium text-ink/70 hover:border-ink/30 hover:text-ink disabled:opacity-50"
-      >
-        Export JSON
-      </button>
-      <button
-        type="button"
-        onClick={handleImportClick}
-        disabled={!hydrated}
-        className="rounded border border-line px-3 py-1.5 text-xs font-medium text-ink/70 hover:border-ink/30 hover:text-ink disabled:opacity-50"
-      >
-        Import JSON
-      </button>
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="application/json,.json"
-        className="hidden"
-        onChange={handleImportFile}
-      />
-      <span className="text-[11px] text-ink/45" aria-live="polite">
+    <div className="flex max-w-xl flex-col items-end gap-2">
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        <button
+          type="button"
+          onClick={() => void handleSave()}
+          disabled={disabled}
+          className="rounded bg-ink px-3 py-1.5 text-xs font-medium text-paper hover:bg-ink/90 disabled:opacity-50"
+        >
+          {busy ? "…" : "Save"}
+        </button>
+        <button
+          type="button"
+          onClick={() => void handleLoad()}
+          disabled={disabled}
+          className="rounded border border-line px-3 py-1.5 text-xs font-medium text-ink/70 hover:border-ink/30 hover:text-ink disabled:opacity-50"
+        >
+          Load
+        </button>
+        <button
+          type="button"
+          onClick={handleExport}
+          disabled={disabled}
+          className="rounded border border-line px-3 py-1.5 text-xs font-medium text-ink/70 hover:border-ink/30 hover:text-ink disabled:opacity-50"
+        >
+          Export JSON
+        </button>
+        <button
+          type="button"
+          onClick={handleImportClick}
+          disabled={disabled}
+          className="rounded border border-line px-3 py-1.5 text-xs font-medium text-ink/70 hover:border-ink/30 hover:text-ink disabled:opacity-50"
+        >
+          Import JSON
+        </button>
+        <button
+          type="button"
+          onClick={() => void handleCopyLink()}
+          disabled={!workspaceId || disabled}
+          className="rounded border border-line px-3 py-1.5 text-xs font-medium text-ink/70 hover:border-ink/30 hover:text-ink disabled:opacity-50"
+        >
+          Copy link
+        </button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="application/json,.json"
+          className="hidden"
+          onChange={(event) => void handleImportFile(event)}
+        />
+      </div>
+      <span className="text-right text-[11px] text-ink/45" aria-live="polite">
         {message
           ? message
           : savedLabel
-            ? `Last saved ${savedLabel}`
+            ? `Last saved ${savedLabel}${persistenceMode === "local" ? " (local cache)" : ""}`
             : hydrated
-              ? "No save yet"
+              ? persistenceMode === "local"
+                ? "Cloud offline — using local cache"
+                : "No save yet"
               : "…"}
       </span>
     </div>

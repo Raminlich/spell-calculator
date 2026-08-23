@@ -8,6 +8,10 @@ import { defaultGlobalConfig } from "@/lib/defaultData";
 
 export const STORAGE_KEY = "spell-calculator:workspace:v1";
 
+export function storageKeyForWorkspace(workspaceId: string): string {
+  return `${STORAGE_KEY}:${workspaceId}`;
+}
+
 export type WorkspaceSnapshot = {
   version: 1;
   savedAt: string;
@@ -113,10 +117,13 @@ export function parseSnapshot(raw: unknown): WorkspaceSnapshot | null {
   };
 }
 
-export function loadSnapshotFromStorage(): WorkspaceSnapshot | null {
+export function loadSnapshotFromStorage(workspaceId?: string): WorkspaceSnapshot | null {
   if (typeof window === "undefined") return null;
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
+    const key = workspaceId
+      ? storageKeyForWorkspace(workspaceId)
+      : STORAGE_KEY;
+    const raw = window.localStorage.getItem(key);
     if (!raw) return null;
     return parseSnapshot(JSON.parse(raw));
   } catch {
@@ -124,12 +131,21 @@ export function loadSnapshotFromStorage(): WorkspaceSnapshot | null {
   }
 }
 
-export function saveSnapshotToStorage(snapshot: WorkspaceSnapshot): void {
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
+export function saveSnapshotToStorage(
+  snapshot: WorkspaceSnapshot,
+  workspaceId?: string
+): void {
+  const key = workspaceId
+    ? storageKeyForWorkspace(workspaceId)
+    : STORAGE_KEY;
+  window.localStorage.setItem(key, JSON.stringify(snapshot));
 }
 
-export function clearSnapshotFromStorage(): void {
-  window.localStorage.removeItem(STORAGE_KEY);
+export function clearSnapshotFromStorage(workspaceId?: string): void {
+  const key = workspaceId
+    ? storageKeyForWorkspace(workspaceId)
+    : STORAGE_KEY;
+  window.localStorage.removeItem(key);
 }
 
 export function downloadSnapshot(snapshot: WorkspaceSnapshot, filename?: string): void {

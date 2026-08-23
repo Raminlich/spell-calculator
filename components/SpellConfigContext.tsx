@@ -28,6 +28,13 @@ import {
   saveSnapshotToStorage,
   type WorkspaceSnapshot,
 } from "@/lib/persistence";
+import { ensureWorkspaceId } from "@/lib/workspaceId";
+import {
+  fetchWorkspaceFromServer,
+  saveWorkspaceToServer,
+} from "@/lib/workspaceApi";
+
+export type PersistenceMode = "server" | "local";
 
 type SpellConfigContextValue = {
   nouns: Noun[];
@@ -42,20 +49,22 @@ type SpellConfigContextValue = {
   config: GlobalConfig;
   setConfig: (config: GlobalConfig) => void;
   resetAll: () => void;
+  workspaceId: string | null;
+  persistenceMode: PersistenceMode;
   /** ISO timestamp of the last successful save, or null. */
   lastSavedAt: string | null;
-  /** True after the initial localStorage hydrate attempt finishes. */
+  /** True after the initial hydrate attempt finishes. */
   hydrated: boolean;
-  /** Persist current workspace to localStorage. Returns saved timestamp. */
-  saveWorkspace: () => string;
-  /** Restore workspace from localStorage. Returns false if nothing saved. */
-  loadWorkspace: () => boolean;
+  /** Persist current workspace to KV (with local cache). */
+  saveWorkspace: () => Promise<{
+    savedAt: string;
+    mode: PersistenceMode;
+  } | null>;
+  /** Restore workspace from KV (fallback to local cache). */
+  loadWorkspace: () => Promise<boolean>;
   /** Download current workspace as a JSON file. */
   exportWorkspace: () => void;
-  /**
-   * Load workspace from an exported JSON file.
-   * On success, applies it and writes localStorage. Returns false if invalid.
-   */
+  /** Load workspace from an exported JSON file. */
   importWorkspace: (file: File) => Promise<boolean>;
 };
 
@@ -85,21 +94,55 @@ export function SpellConfigProvider({ children }: { children: ReactNode }) {
   const [modifierVerbs, setModifierVerbs] =
     useState<ModifierVerb[]>(defaultModifierVerbs);
   const [config, setConfig] = useState<GlobalConfig>(defaultGlobalConfig);
+  const [workspaceId, setWorkspaceId] = useState<string | null>(null);
+  const [persistenceMode, setPersistenceMode] =
+    useState<PersistenceMode>("local");
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    const existing = loadSnapshotFromStorage();
-    if (existing) {
-      applySnapshot(existing, {
-        setNouns,
-        setDeliveryVerbs,
-        setModifierVerbs,
-        setConfig,
-        setLastSavedAt,
-      });
+    let cancelled = false;
+
+    async function hydrate() {
+      const id = ensureWorkspaceId();
+      if (cancelled) return;
+      setWorkspaceId(id);
+
+      const serverResult = await fetchWorkspaceFromServer(id);
+      if (cancelled) return;
+
+      if (serverResult !== "missing" && serverResult !== "error") {
+        applySnapshot(serverResult, {
+          setNouns,
+          setDeliveryVerbs,
+          setModifierVerbs,
+          setConfig,
+          setLastSavedAt,
+        });
+        saveSnapshotToStorage(serverResult, id);
+        setPersistenceMode("server");
+        setHydrated(true);
+        return;
+      }
+
+      const cached = loadSnapshotFromStorage(id);
+      if (cached) {
+        applySnapshot(cached, {
+          setNouns,
+          setDeliveryVerbs,
+          setModifierVerbs,
+          setConfig,
+          setLastSavedAt,
+        });
+      }
+      setPersistenceMode(serverResult === "error" ? "local" : "server");
+      setHydrated(true);
     }
-    setHydrated(true);
+
+    void hydrate();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   function updateNoun(id: string, noun: Noun) {
@@ -119,32 +162,58 @@ export function SpellConfigProvider({ children }: { children: ReactNode }) {
     setDeliveryVerbs(defaultDeliveryVerbs);
     setModifierVerbs(defaultModifierVerbs);
     setConfig(defaultGlobalConfig);
+    setLastSavedAt(null);
   }
 
-  const saveWorkspace = useCallback(() => {
+  const saveWorkspace = useCallback(async () => {
+    if (!workspaceId) return null;
+
     const snapshot = createSnapshot({
       nouns,
       deliveryVerbs,
       modifierVerbs,
       config,
     });
-    saveSnapshotToStorage(snapshot);
-    setLastSavedAt(snapshot.savedAt);
-    return snapshot.savedAt;
-  }, [nouns, deliveryVerbs, modifierVerbs, config]);
 
-  const loadWorkspace = useCallback(() => {
-    const existing = loadSnapshotFromStorage();
-    if (!existing) return false;
-    applySnapshot(existing, {
+    saveSnapshotToStorage(snapshot, workspaceId);
+    setLastSavedAt(snapshot.savedAt);
+
+    const savedToServer = await saveWorkspaceToServer(workspaceId, snapshot);
+    const mode: PersistenceMode = savedToServer ? "server" : "local";
+    setPersistenceMode(mode);
+    return { savedAt: snapshot.savedAt, mode };
+  }, [nouns, deliveryVerbs, modifierVerbs, config, workspaceId]);
+
+  const loadWorkspace = useCallback(async () => {
+    if (!workspaceId) return false;
+
+    const serverResult = await fetchWorkspaceFromServer(workspaceId);
+    if (serverResult !== "missing" && serverResult !== "error") {
+      applySnapshot(serverResult, {
+        setNouns,
+        setDeliveryVerbs,
+        setModifierVerbs,
+        setConfig,
+        setLastSavedAt,
+      });
+      saveSnapshotToStorage(serverResult, workspaceId);
+      setPersistenceMode("server");
+      return true;
+    }
+
+    const cached = loadSnapshotFromStorage(workspaceId);
+    if (!cached) return false;
+
+    applySnapshot(cached, {
       setNouns,
       setDeliveryVerbs,
       setModifierVerbs,
       setConfig,
       setLastSavedAt,
     });
+    setPersistenceMode(serverResult === "error" ? "local" : "server");
     return true;
-  }, []);
+  }, [workspaceId]);
 
   const exportWorkspace = useCallback(() => {
     const snapshot = createSnapshot({
@@ -156,19 +225,28 @@ export function SpellConfigProvider({ children }: { children: ReactNode }) {
     downloadSnapshot(snapshot);
   }, [nouns, deliveryVerbs, modifierVerbs, config]);
 
-  const importWorkspace = useCallback(async (file: File) => {
-    const snapshot = await readSnapshotFromFile(file);
-    if (!snapshot) return false;
-    applySnapshot(snapshot, {
-      setNouns,
-      setDeliveryVerbs,
-      setModifierVerbs,
-      setConfig,
-      setLastSavedAt,
-    });
-    saveSnapshotToStorage(snapshot);
-    return true;
-  }, []);
+  const importWorkspace = useCallback(
+    async (file: File) => {
+      if (!workspaceId) return false;
+
+      const snapshot = await readSnapshotFromFile(file);
+      if (!snapshot) return false;
+
+      applySnapshot(snapshot, {
+        setNouns,
+        setDeliveryVerbs,
+        setModifierVerbs,
+        setConfig,
+        setLastSavedAt,
+      });
+      saveSnapshotToStorage(snapshot, workspaceId);
+
+      const savedToServer = await saveWorkspaceToServer(workspaceId, snapshot);
+      setPersistenceMode(savedToServer ? "server" : "local");
+      return true;
+    },
+    [workspaceId]
+  );
 
   return (
     <SpellConfigContext.Provider
@@ -185,6 +263,8 @@ export function SpellConfigProvider({ children }: { children: ReactNode }) {
         config,
         setConfig,
         resetAll,
+        workspaceId,
+        persistenceMode,
         lastSavedAt,
         hydrated,
         saveWorkspace,
