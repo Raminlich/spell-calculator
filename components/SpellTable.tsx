@@ -763,7 +763,7 @@ export default function SpellTable({
                         className="font-mono text-[13px] tabular-nums text-ink/80"
                         title={
                           displayScore
-                            ? activeRadarAxisId
+                            ? "normalized" in displayScore
                               ? `${activeRadarAxisLabel} ${displayScore.total.toFixed(1)} (${(displayScore.normalized * 100).toFixed(0)}%)`
                               : `Score ${displayScore.total.toFixed(1)} / ${displayScore.max.toFixed(0)}`
                             : undefined
