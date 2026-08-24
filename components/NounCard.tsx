@@ -19,26 +19,28 @@ export default function NounCard({
   const status = noun.statusEffect;
 
   return (
-    <article className="@container flex flex-col gap-4 rounded border border-line bg-white p-4">
-      <header>
-        <h3 className="text-base font-semibold tracking-tight">{noun.name || "Noun"}</h3>
-        <p className="mt-1 text-xs text-ink/45">Noun</p>
-      </header>
-
-      <div className="grid grid-cols-1 gap-3 @min-[20rem]:grid-cols-2">
+    <article className="@container flex min-w-0 flex-col gap-2 rounded border border-line bg-white p-2.5">
+      <header className="flex items-center gap-2">
         <CardField
           id={`${prefix}-name`}
           label="Name"
           value={noun.name}
           onChange={(v) => onChange({ ...noun, name: v })}
-          className="@min-[20rem]:col-span-2"
+          variant="title"
+          className="min-w-0 flex-1"
         />
+        <span className="shrink-0 text-[10px] font-medium uppercase tracking-wide text-ink/40">
+          Noun
+        </span>
+      </header>
+
+      <div className="grid grid-cols-1 gap-1.5 @min-[15rem]:grid-cols-2">
         <CardField
           id={`${prefix}-description`}
           label="Description"
           value={noun.description}
           onChange={(v) => onChange({ ...noun, description: v })}
-          className="@min-[20rem]:col-span-2"
+          className="@min-[15rem]:col-span-2"
         />
         <CardField
           id={`${prefix}-potency`}
@@ -75,15 +77,24 @@ export default function NounCard({
           hint="Of potency gained above base: this % → effect, rest → damage"
           value={noun.potencyBleedPercent}
           onChange={(v) => onChange({ ...noun, potencyBleedPercent: parseNum(v) })}
-          className="@min-[20rem]:col-span-2"
+          className="@min-[15rem]:col-span-2"
         />
       </div>
 
-      <fieldset className="rounded border border-line/80 p-3">
-        <legend className="px-1 text-xs font-semibold uppercase tracking-wide text-ink/55">
-          Status effect
-        </legend>
-        <div className="mt-2 grid grid-cols-1 gap-3 @min-[20rem]:grid-cols-2">
+      <details className="group border-t border-line/70 pt-1.5">
+        <summary className="flex cursor-pointer list-none items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-ink/50 marker:content-none [&::-webkit-details-marker]:hidden">
+          <span
+            aria-hidden
+            className="inline-block text-[9px] text-ink/40 transition-transform group-open:rotate-90"
+          >
+            ▸
+          </span>
+          <span>Status effect</span>
+          <span className="normal-case tracking-normal text-ink/40 group-open:hidden">
+            · {status.name || "—"}
+          </span>
+        </summary>
+        <div className="mt-1.5 grid grid-cols-1 gap-1.5 @min-[15rem]:grid-cols-2">
           <CardField
             id={`${prefix}-status-name`}
             label="Name"
@@ -94,7 +105,7 @@ export default function NounCard({
                 statusEffect: { ...status, name: v },
               })
             }
-            className="@min-[20rem]:col-span-2"
+            className="@min-[15rem]:col-span-2"
           />
           <CardField
             id={`${prefix}-status-potency`}
@@ -134,7 +145,7 @@ export default function NounCard({
                   statusEffect: { ...status, damage: parseNum(v) },
                 })
               }
-              className="@min-[20rem]:col-span-2"
+              className="@min-[15rem]:col-span-2"
             />
           ) : (
             <CardField
@@ -152,11 +163,11 @@ export default function NounCard({
                   },
                 })
               }
-              className="@min-[20rem]:col-span-2"
+              className="@min-[15rem]:col-span-2"
             />
           )}
         </div>
-      </fieldset>
+      </details>
     </article>
   );
 }

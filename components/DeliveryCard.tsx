@@ -18,28 +18,28 @@ export default function DeliveryCard({
   const prefix = `delivery-${verb.id}`;
 
   return (
-    <article className="@container flex flex-col gap-4 rounded border border-line bg-white p-4">
-      <header>
-        <h3 className="text-base font-semibold tracking-tight">
-          {verb.name || "Delivery"}
-        </h3>
-        <p className="mt-1 text-xs text-ink/45">Delivery verb</p>
-      </header>
-
-      <div className="grid grid-cols-1 gap-3 @min-[20rem]:grid-cols-2">
+    <article className="@container flex min-w-0 flex-col gap-2 rounded border border-line bg-white p-2.5">
+      <header className="flex items-center gap-2">
         <CardField
           id={`${prefix}-name`}
           label="Name"
           value={verb.name}
           onChange={(v) => onChange({ ...verb, name: v })}
-          className="@min-[20rem]:col-span-2"
+          variant="title"
+          className="min-w-0 flex-1"
         />
+        <span className="shrink-0 text-[10px] font-medium uppercase tracking-wide text-ink/40">
+          Delivery
+        </span>
+      </header>
+
+      <div className="grid grid-cols-1 gap-1.5 @min-[15rem]:grid-cols-2">
         <CardField
           id={`${prefix}-description`}
           label="Description"
           value={verb.description}
           onChange={(v) => onChange({ ...verb, description: v })}
-          className="@min-[20rem]:col-span-2"
+          className="@min-[15rem]:col-span-2"
         />
         <CardField
           id={`${prefix}-manaCost`}
@@ -63,7 +63,7 @@ export default function DeliveryCard({
           min={0}
           value={verb.baseInstances}
           onChange={(v) => onChange({ ...verb, baseInstances: parseNum(v) })}
-          className="@min-[20rem]:col-span-2"
+          className="@min-[15rem]:col-span-2"
         />
       </div>
     </article>

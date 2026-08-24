@@ -23,28 +23,28 @@ export default function ModifierCard({
   const showsSaturate = "durationMultiplier" in verb;
 
   return (
-    <article className="@container flex flex-col gap-4 rounded border border-line bg-white p-4">
-      <header>
-        <h3 className="text-base font-semibold tracking-tight">
-          {verb.name || "Modifier"}
-        </h3>
-        <p className="mt-1 text-xs text-ink/45">Modifier verb</p>
-      </header>
-
-      <div className="grid grid-cols-1 gap-3 @min-[20rem]:grid-cols-2">
+    <article className="@container flex min-w-0 flex-col gap-2 rounded border border-line bg-white p-2.5">
+      <header className="flex items-center gap-2">
         <CardField
           id={`${prefix}-name`}
           label="Name"
           value={verb.name}
           onChange={(v) => onChange({ ...verb, name: v })}
-          className="@min-[20rem]:col-span-2"
+          variant="title"
+          className="min-w-0 flex-1"
         />
+        <span className="shrink-0 text-[10px] font-medium uppercase tracking-wide text-ink/40">
+          Modifier
+        </span>
+      </header>
+
+      <div className="grid grid-cols-1 gap-1.5 @min-[15rem]:grid-cols-2">
         <CardField
           id={`${prefix}-description`}
           label="Description"
           value={verb.description}
           onChange={(v) => onChange({ ...verb, description: v })}
-          className="@min-[20rem]:col-span-2"
+          className="@min-[15rem]:col-span-2"
         />
         <CardField
           id={`${prefix}-manaCost`}
@@ -60,27 +60,23 @@ export default function ModifierCard({
           value={verb.castTime}
           onChange={(v) => onChange({ ...verb, castTime: parseNum(v) })}
         />
-        <div className="flex flex-col gap-1 @min-[20rem]:col-span-2">
-          <label
-            htmlFor={`${prefix}-repeatAllowed`}
-            className="flex items-center gap-2 text-xs font-medium text-ink/70"
-          >
-            <input
-              id={`${prefix}-repeatAllowed`}
-              name={`${prefix}-repeatAllowed`}
-              type="checkbox"
-              checked={verb.repeatAllowed}
-              onChange={(e) =>
-                onChange({ ...verb, repeatAllowed: e.target.checked })
-              }
-              className="size-4 accent-accent"
-            />
-            Repeat allowed
-          </label>
-          <span className="text-[11px] text-ink/45">
-            When off, this modifier can appear at most once per spell.
-          </span>
-        </div>
+        <label
+          htmlFor={`${prefix}-repeatAllowed`}
+          title="When off, this modifier can appear at most once per spell."
+          className="flex items-center gap-1.5 text-[11px] font-medium text-ink/70 @min-[15rem]:col-span-2"
+        >
+          <input
+            id={`${prefix}-repeatAllowed`}
+            name={`${prefix}-repeatAllowed`}
+            type="checkbox"
+            checked={verb.repeatAllowed}
+            onChange={(e) =>
+              onChange({ ...verb, repeatAllowed: e.target.checked })
+            }
+            className="size-3.5 accent-accent"
+          />
+          Repeat allowed
+        </label>
         {showsPotency && (
           <CardField
             id={`${prefix}-potency`}
@@ -91,7 +87,7 @@ export default function ModifierCard({
             onChange={(v) =>
               onChange({ ...verb, potencyIncreasePercent: parseNum(v) })
             }
-            className="@min-[20rem]:col-span-2"
+            className="@min-[15rem]:col-span-2"
           />
         )}
         {showsInstances && (
@@ -104,11 +100,11 @@ export default function ModifierCard({
             onChange={(v) =>
               onChange({ ...verb, instanceMultiplier: parseNum(v) })
             }
-            className="@min-[20rem]:col-span-2"
+            className="@min-[15rem]:col-span-2"
           />
         )}
         {showsSeek && (
-          <p className="text-xs text-ink/50 @min-[20rem]:col-span-2">
+          <p className="text-[11px] leading-snug text-ink/50 @min-[15rem]:col-span-2">
             Behavior: arcs toward a target (no potency change).
           </p>
         )}
@@ -146,7 +142,7 @@ export default function ModifierCard({
             onChange={(v) =>
               onChange({ ...verb, durationMultiplier: parseNum(v) })
             }
-            className="@min-[20rem]:col-span-2"
+            className="@min-[15rem]:col-span-2"
           />
         )}
       </div>
