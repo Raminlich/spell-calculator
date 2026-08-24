@@ -9,6 +9,7 @@ type FieldProps = {
   onChange: (value: string) => void;
   step?: number;
   min?: number;
+  max?: number;
   optional?: boolean;
   className?: string;
   variant?: "field" | "title";
@@ -23,6 +24,7 @@ export default function CardField({
   onChange,
   step = 0.1,
   min,
+  max,
   optional = false,
   className,
   variant = "field",
@@ -52,6 +54,7 @@ export default function CardField({
         type={type}
         step={type === "number" ? step : undefined}
         min={min}
+        max={max}
         value={empty ? "" : value}
         placeholder={optional ? "—" : undefined}
         title={hint}

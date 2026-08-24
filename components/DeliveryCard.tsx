@@ -1,5 +1,6 @@
 "use client";
 
+import CardEnableToggle from "@/components/CardEnableToggle";
 import CardField from "@/components/CardField";
 import type { DeliveryVerb } from "@/lib/types";
 
@@ -18,8 +19,17 @@ export default function DeliveryCard({
   const prefix = `delivery-${verb.id}`;
 
   return (
-    <article className="@container flex min-w-0 flex-col gap-2 rounded border border-line bg-white p-2.5">
+    <article
+      className={`@container flex min-w-0 flex-col gap-2 rounded border border-line bg-white p-2.5 ${
+        verb.enabled ? "" : "opacity-55"
+      }`}
+    >
       <header className="flex items-center gap-2">
+        <CardEnableToggle
+          id={`${prefix}-enabled`}
+          checked={verb.enabled}
+          onChange={(enabled) => onChange({ ...verb, enabled })}
+        />
         <CardField
           id={`${prefix}-name`}
           label="Name"

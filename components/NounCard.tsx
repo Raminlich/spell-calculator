@@ -1,5 +1,6 @@
 "use client";
 
+import CardEnableToggle from "@/components/CardEnableToggle";
 import CardField from "@/components/CardField";
 import type { Noun } from "@/lib/types";
 
@@ -19,8 +20,17 @@ export default function NounCard({
   const status = noun.statusEffect;
 
   return (
-    <article className="@container flex min-w-0 flex-col gap-2 rounded border border-line bg-white p-2.5">
+    <article
+      className={`@container flex min-w-0 flex-col gap-2 rounded border border-line bg-white p-2.5 ${
+        noun.enabled ? "" : "opacity-55"
+      }`}
+    >
       <header className="flex items-center gap-2">
+        <CardEnableToggle
+          id={`${prefix}-enabled`}
+          checked={noun.enabled}
+          onChange={(enabled) => onChange({ ...noun, enabled })}
+        />
         <CardField
           id={`${prefix}-name`}
           label="Name"

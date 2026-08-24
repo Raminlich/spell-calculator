@@ -24,6 +24,8 @@ export type Noun = {
   id: string;
   name: string;
   description: string;
+  /** When false, this noun is excluded from combo generation. */
+  enabled: boolean;
   manaCost: number;
   castTime: number;
   /** Base potency pool granted by this noun. */
@@ -45,6 +47,8 @@ export type DeliveryVerb = {
   id: string;
   name: string;
   description: string;
+  /** When false, this delivery is excluded from combo generation. */
+  enabled: boolean;
   manaCost: number;
   castTime: number;
   /** Number of spell instances this delivery produces by default. */
@@ -63,6 +67,8 @@ export type ModifierVerb = {
   id: string;
   name: string;
   description: string;
+  /** When false, this modifier is excluded from combo generation. */
+  enabled: boolean;
   manaCost: number;
   castTime: number;
   /**

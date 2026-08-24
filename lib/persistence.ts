@@ -11,11 +11,8 @@ import {
   defaultNouns,
 } from "@/lib/defaultData";
 
-export const STORAGE_KEY = "spell-calculator:workspace:v1";
-
-export function storageKeyForWorkspace(workspaceId: string): string {
-  return `${STORAGE_KEY}:${workspaceId}`;
-}
+export const STORAGE_KEY = "spell-calculator:data:v1";
+const LEGACY_STORAGE_PREFIX = "spell-calculator:workspace:v1:";
 
 export type WorkspaceSnapshot = {
   version: 1;
@@ -58,9 +55,24 @@ function isModifierArray(value: unknown): value is ModifierVerb[] {
   return Array.isArray(value) && value.every((item) => isObject(item) && typeof item.id === "string");
 }
 
+function normalizeNoun(noun: Noun): Noun {
+  return {
+    ...noun,
+    enabled: noun.enabled !== false,
+  };
+}
+
+function normalizeDelivery(verb: DeliveryVerb): DeliveryVerb {
+  return {
+    ...verb,
+    enabled: verb.enabled !== false,
+  };
+}
+
 function normalizeModifier(mod: ModifierVerb): ModifierVerb {
   return {
     ...mod,
+    enabled: mod.enabled !== false,
     repeatAllowed: mod.repeatAllowed !== false,
   };
 }
@@ -161,42 +173,49 @@ export function parseSnapshot(raw: unknown): WorkspaceSnapshot | null {
   return mergeCatalogDefaults({
     version: 1,
     savedAt: raw.savedAt,
-    nouns: raw.nouns,
-    deliveryVerbs: raw.deliveryVerbs,
+    nouns: raw.nouns.map(normalizeNoun),
+    deliveryVerbs: raw.deliveryVerbs.map(normalizeDelivery),
     modifierVerbs: raw.modifierVerbs.map(normalizeModifier),
     config,
   });
 }
 
-export function loadSnapshotFromStorage(workspaceId?: string): WorkspaceSnapshot | null {
+function loadLegacySnapshotFromStorage(): WorkspaceSnapshot | null {
+  let best: WorkspaceSnapshot | null = null;
+  for (let i = 0; i < window.localStorage.length; i++) {
+    const key = window.localStorage.key(i);
+    if (!key?.startsWith(LEGACY_STORAGE_PREFIX)) continue;
+    try {
+      const snapshot = parseSnapshot(JSON.parse(window.localStorage.getItem(key) ?? ""));
+      if (!snapshot) continue;
+      if (!best || snapshot.savedAt > best.savedAt) best = snapshot;
+    } catch {
+      // ignore corrupt legacy entries
+    }
+  }
+  return best;
+}
+
+export function loadSnapshotFromStorage(): WorkspaceSnapshot | null {
   if (typeof window === "undefined") return null;
   try {
-    const key = workspaceId
-      ? storageKeyForWorkspace(workspaceId)
-      : STORAGE_KEY;
-    const raw = window.localStorage.getItem(key);
-    if (!raw) return null;
-    return parseSnapshot(JSON.parse(raw));
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const snapshot = parseSnapshot(JSON.parse(raw));
+      if (snapshot) return snapshot;
+    }
+    return loadLegacySnapshotFromStorage();
   } catch {
     return null;
   }
 }
 
-export function saveSnapshotToStorage(
-  snapshot: WorkspaceSnapshot,
-  workspaceId?: string
-): void {
-  const key = workspaceId
-    ? storageKeyForWorkspace(workspaceId)
-    : STORAGE_KEY;
-  window.localStorage.setItem(key, JSON.stringify(snapshot));
+export function saveSnapshotToStorage(snapshot: WorkspaceSnapshot): void {
+  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
 }
 
-export function clearSnapshotFromStorage(workspaceId?: string): void {
-  const key = workspaceId
-    ? storageKeyForWorkspace(workspaceId)
-    : STORAGE_KEY;
-  window.localStorage.removeItem(key);
+export function clearSnapshotFromStorage(): void {
+  window.localStorage.removeItem(STORAGE_KEY);
 }
 
 export function downloadSnapshot(snapshot: WorkspaceSnapshot, filename?: string): void {
@@ -213,7 +232,7 @@ export function downloadSnapshot(snapshot: WorkspaceSnapshot, filename?: string)
   URL.revokeObjectURL(url);
 }
 
-/** Parse a JSON string from an exported workspace file. */
+/** Parse a JSON string from an exported save file. */
 export function parseSnapshotJson(text: string): WorkspaceSnapshot | null {
   try {
     return parseSnapshot(JSON.parse(text));
@@ -242,4 +261,13 @@ export function formatSavedAt(iso: string | null): string | null {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return null;
   return date.toLocaleString();
+}
+
+/** Drop leftover ?workspace= ids from older builds. */
+export function stripWorkspaceQueryParam(): void {
+  if (typeof window === "undefined") return;
+  const url = new URL(window.location.href);
+  if (!url.searchParams.has("workspace")) return;
+  url.searchParams.delete("workspace");
+  window.history.replaceState(null, "", url.toString());
 }

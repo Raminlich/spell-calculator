@@ -269,19 +269,23 @@ export function generateAllCombos(
   modifierVerbs: ModifierVerb[],
   config: GlobalConfig
 ): { combos: SpellCombo[]; truncated: boolean } {
+  const activeNouns = nouns.filter((n) => n.enabled);
+  const activeDeliveries = deliveryVerbs.filter((d) => d.enabled);
+  const activeModifiers = modifierVerbs.filter((m) => m.enabled);
+
   const modifierCountMaps = generateModifierCountMaps(
-    modifierVerbs,
+    activeModifiers,
     config.maxRepeatPerModifier,
     config.minTotalModifiers,
     config.maxTotalModifiers
   );
-  const modifiersById = new Map(modifierVerbs.map((m) => [m.id, m]));
+  const modifiersById = new Map(activeModifiers.map((m) => [m.id, m]));
 
   const combos: SpellCombo[] = [];
   let truncated = false;
 
-  outer: for (const noun of nouns) {
-    for (const delivery of deliveryVerbs) {
+  outer: for (const noun of activeNouns) {
+    for (const delivery of activeDeliveries) {
       for (const modifierCounts of modifierCountMaps) {
         if (combos.length >= MAX_COMBOS_SAFETY_CAP) {
           truncated = true;

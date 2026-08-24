@@ -3,7 +3,6 @@
 import { useRef, useState, type ChangeEvent } from "react";
 import { useSpellConfig } from "@/components/SpellConfigContext";
 import { formatSavedAt } from "@/lib/persistence";
-import { copyWorkspaceUrl } from "@/lib/workspaceId";
 
 type SaveControlsProps = {
   /** Short context label shown next to status, e.g. "Calculator" or "Components". */
@@ -18,7 +17,6 @@ export default function SaveControls({ contextLabel }: SaveControlsProps) {
     importWorkspace,
     lastSavedAt,
     hydrated,
-    workspaceId,
     persistenceMode,
   } = useSpellConfig();
   const [message, setMessage] = useState<string | null>(null);
@@ -35,7 +33,7 @@ export default function SaveControls({ contextLabel }: SaveControlsProps) {
     try {
       const result = await saveWorkspace();
       if (result?.mode === "server") {
-        flash(`Saved ${contextLabel.toLowerCase()} workspace to cloud`);
+        flash(`Saved ${contextLabel.toLowerCase()} to cloud`);
       } else if (result) {
         flash("Saved locally — cloud unavailable");
       }
@@ -48,7 +46,7 @@ export default function SaveControls({ contextLabel }: SaveControlsProps) {
     setBusy(true);
     try {
       const ok = await loadWorkspace();
-      flash(ok ? "Loaded workspace" : "No saved workspace found");
+      flash(ok ? "Loaded saved data" : "No saved data found");
     } finally {
       setBusy(false);
     }
@@ -71,20 +69,9 @@ export default function SaveControls({ contextLabel }: SaveControlsProps) {
     setBusy(true);
     try {
       const ok = await importWorkspace(file);
-      flash(ok ? "Imported workspace from JSON" : "Invalid or unreadable JSON file");
+      flash(ok ? "Imported from JSON" : "Invalid or unreadable JSON file");
     } finally {
       setBusy(false);
-    }
-  }
-
-  async function handleCopyLink() {
-    if (!workspaceId) return;
-    const url = copyWorkspaceUrl(workspaceId);
-    try {
-      await navigator.clipboard.writeText(url);
-      flash("Copied workspace link");
-    } catch {
-      flash("Could not copy link");
     }
   }
 
@@ -125,14 +112,6 @@ export default function SaveControls({ contextLabel }: SaveControlsProps) {
           className="rounded border border-line px-3 py-1.5 text-xs font-medium text-ink/70 hover:border-ink/30 hover:text-ink disabled:opacity-50"
         >
           Import JSON
-        </button>
-        <button
-          type="button"
-          onClick={() => void handleCopyLink()}
-          disabled={!workspaceId || disabled}
-          className="rounded border border-line px-3 py-1.5 text-xs font-medium text-ink/70 hover:border-ink/30 hover:text-ink disabled:opacity-50"
-        >
-          Copy link
         </button>
         <input
           ref={fileInputRef}

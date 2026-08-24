@@ -2,15 +2,15 @@ import { parseSnapshot, type WorkspaceSnapshot } from "@/lib/persistence";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "";
 
-function workspaceUrl(id: string): string {
-  return `${API_BASE}/api/workspace/${encodeURIComponent(id)}`;
+function dataUrl(): string {
+  return `${API_BASE}/api/data`;
 }
 
-export async function fetchWorkspaceFromServer(
-  id: string
-): Promise<WorkspaceSnapshot | "missing" | "error"> {
+export async function fetchSavedDataFromServer(): Promise<
+  WorkspaceSnapshot | "missing" | "error"
+> {
   try {
-    const response = await fetch(workspaceUrl(id), {
+    const response = await fetch(dataUrl(), {
       method: "GET",
       cache: "no-store",
     });
@@ -24,12 +24,11 @@ export async function fetchWorkspaceFromServer(
   }
 }
 
-export async function saveWorkspaceToServer(
-  id: string,
+export async function saveDataToServer(
   snapshot: WorkspaceSnapshot
 ): Promise<boolean> {
   try {
-    const response = await fetch(workspaceUrl(id), {
+    const response = await fetch(dataUrl(), {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(snapshot),

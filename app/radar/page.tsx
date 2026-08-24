@@ -8,8 +8,8 @@ export default function RadarPage() {
   const { config, setConfig } = useSpellConfig();
 
   return (
-    <main className="mx-auto max-w-[1400px] px-6 py-8">
-      <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
+    <main className="mx-auto max-w-[1400px] px-6 py-6">
+      <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-lg font-semibold tracking-tight">Radar scores</h1>
           <p className="mt-1 text-sm text-ink/55">
