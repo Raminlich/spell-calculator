@@ -70,17 +70,20 @@ export default function NounCard({
           value={noun.manaCost}
           onChange={(v) => onChange({ ...noun, manaCost: parseNum(v) })}
         />
-        <CardField
-          id={`${prefix}-bleed`}
-          label="Potency bleed %"
-          type="number"
-          hint="Of potency gained above base: this % → effect, rest → damage"
-          value={noun.potencyBleedPercent}
-          onChange={(v) => onChange({ ...noun, potencyBleedPercent: parseNum(v) })}
-          className="@min-[15rem]:col-span-2"
-        />
+        {status && (
+          <CardField
+            id={`${prefix}-bleed`}
+            label="Potency bleed %"
+            type="number"
+            hint="Of potency gained above base: this % → effect, rest → damage"
+            value={noun.potencyBleedPercent}
+            onChange={(v) => onChange({ ...noun, potencyBleedPercent: parseNum(v) })}
+            className="@min-[15rem]:col-span-2"
+          />
+        )}
       </div>
 
+      {status ? (
       <details className="group border-t border-line/70 pt-1.5">
         <summary className="flex cursor-pointer list-none items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-ink/50 marker:content-none [&::-webkit-details-marker]:hidden">
           <span
@@ -168,6 +171,11 @@ export default function NounCard({
           )}
         </div>
       </details>
+      ) : (
+        <p className="border-t border-line/70 pt-1.5 text-[10px] text-ink/40">
+          No status effect
+        </p>
+      )}
     </article>
   );
 }

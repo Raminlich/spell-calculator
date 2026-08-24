@@ -192,7 +192,7 @@ export function computeSpellCombo(
   const { damagePotency, effectStrengthFactor } = splitPotencyGain(
     noun.potency,
     potencyPool,
-    noun.potencyBleedPercent
+    noun.statusEffect ? noun.potencyBleedPercent : 0
   );
 
   const potencyPerInstance = instances > 0 ? potencyPool / instances : potencyPool;
@@ -205,11 +205,16 @@ export function computeSpellCombo(
   // Split distributes effect strength across instances, same as damage potency.
   const effectStrengthPerInstance =
     instances > 0 ? effectStrengthFactor / instances : effectStrengthFactor;
-  const effect = computeEffectResult(
-    noun.statusEffect,
-    effectStrengthPerInstance
-  );
-  effect.duration *= durationMultiplier;
+  const effect = noun.statusEffect
+    ? (() => {
+        const result = computeEffectResult(
+          noun.statusEffect,
+          effectStrengthPerInstance
+        );
+        result.duration *= durationMultiplier;
+        return result;
+      })()
+    : undefined;
 
   const chainTargets = 1 + chainExtraTargets;
   const falloffRetain = 1 - Math.min(100, Math.max(0, chainFalloffPercent)) / 100;
@@ -219,7 +224,7 @@ export function computeSpellCombo(
 
   const directDamage = damagePerInstance * instances;
   const effectDamage =
-    effect.kind === "burn" ? (effect.damage ?? 0) * instances : 0;
+    effect?.kind === "burn" ? (effect.damage ?? 0) * instances : 0;
   const totalDamage = directDamage + effectDamage;
   const damagePerMana = manaCost > 0 ? totalDamage / manaCost : 0;
   const manaPerSecond = castTime > 0 ? manaCost / castTime : 0;

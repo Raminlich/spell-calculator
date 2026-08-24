@@ -175,34 +175,37 @@ const columns: ColumnDef[] = [
     label: "Effect",
     group: "effects",
     align: "left",
-    get: (c) => c.effect.name,
+    get: (c) => c.effect?.name ?? "—",
   },
   {
     key: "effectPotency",
     label: "Effect Potency",
     group: "effects",
     align: "right",
-    get: (c) => c.effect.potency,
-    format: (c) => c.effect.potency.toFixed(2),
+    get: (c) => c.effect?.potency ?? 0,
+    format: (c) => (c.effect ? c.effect.potency.toFixed(2) : "—"),
   },
   {
     key: "effectDuration",
     label: "Duration",
     group: "effects",
     align: "right",
-    get: (c) => c.effect.duration,
-    format: (c) => c.effect.duration.toFixed(1) + "s",
+    get: (c) => c.effect?.duration ?? 0,
+    format: (c) => (c.effect ? c.effect.duration.toFixed(1) + "s" : "—"),
   },
   {
     key: "effectOutput",
     label: "Burn Damage / Slow %",
     group: "effects",
     align: "right",
-    get: (c) =>
-      c.effect.kind === "burn"
+    get: (c) => {
+      if (!c.effect) return 0;
+      return c.effect.kind === "burn"
         ? (c.effect.damage ?? c.effect.potency)
-        : (c.effect.slowAmountPercent ?? c.effect.potency),
+        : (c.effect.slowAmountPercent ?? c.effect.potency);
+    },
     format: (c) => {
+      if (!c.effect) return "—";
       if (c.effect.kind === "burn") {
         return (c.effect.damage ?? c.effect.potency).toFixed(2) + " dmg";
       }

@@ -32,7 +32,7 @@ export default function ComponentsPage() {
 
       <CategorySection
         title="Nouns"
-        description="Elemental bases with direct damage and a status effect."
+        description="Elemental bases with direct damage; some also carry a status effect."
       >
         {nouns.map((noun) => (
           <NounCard

@@ -114,9 +114,10 @@ function modifierStackCount(combo: SpellCombo, modifierId: string): number {
 
 /** Map effect kind to a categorical baseline for control utility. */
 function effectCategoryScore(
-  kind: SpellCombo["effect"]["kind"],
+  kind: NonNullable<SpellCombo["effect"]>["kind"] | undefined,
   config: GlobalConfig
 ): number {
+  if (!kind) return 0;
   switch (kind) {
     case "slow":
       return clamp01(config.radarEffectScoreSlow);
@@ -237,8 +238,8 @@ export function scoreSpellRadar(
         },
         {
           label: "Effect",
-          raw: combo.effect.name,
-          unit: effectCategoryScore(combo.effect.kind, config),
+          raw: combo.effect?.name ?? "none",
+          unit: effectCategoryScore(combo.effect?.kind, config),
         },
       ]
     ),
@@ -250,19 +251,23 @@ export function scoreSpellRadar(
       [
         {
           label: "Duration",
-          raw: combo.effect.duration.toFixed(1) + "s",
-          unit: higherBetter(
-            combo.effect.duration,
-            config.radarHalfEffectDuration
-          ),
+          raw: combo.effect ? combo.effect.duration.toFixed(1) + "s" : "—",
+          unit: combo.effect
+            ? higherBetter(
+                combo.effect.duration,
+                config.radarHalfEffectDuration
+              )
+            : 0,
         },
         {
           label: "Effect Potency",
-          raw: combo.effect.potency.toFixed(2),
-          unit: higherBetter(
-            combo.effect.potency,
-            config.radarHalfEffectPotency
-          ),
+          raw: combo.effect ? combo.effect.potency.toFixed(2) : "—",
+          unit: combo.effect
+            ? higherBetter(
+                combo.effect.potency,
+                config.radarHalfEffectPotency
+              )
+            : 0,
         },
       ]
     ),

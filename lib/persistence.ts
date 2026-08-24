@@ -4,7 +4,12 @@ import type {
   ModifierVerb,
   GlobalConfig,
 } from "@/lib/types";
-import { defaultGlobalConfig } from "@/lib/defaultData";
+import {
+  defaultDeliveryVerbs,
+  defaultGlobalConfig,
+  defaultModifierVerbs,
+  defaultNouns,
+} from "@/lib/defaultData";
 
 export const STORAGE_KEY = "spell-calculator:workspace:v1";
 
@@ -57,6 +62,38 @@ function normalizeModifier(mod: ModifierVerb): ModifierVerb {
   return {
     ...mod,
     repeatAllowed: mod.repeatAllowed !== false,
+  };
+}
+
+/** Append catalog defaults that are missing by id; never overwrite saved edits. */
+function mergeMissingById<T extends { id: string }>(
+  saved: T[],
+  defaults: T[]
+): T[] {
+  const present = new Set(saved.map((item) => item.id));
+  const missing = defaults.filter((item) => !present.has(item.id));
+  return missing.length === 0 ? saved : [...saved, ...missing];
+}
+
+/**
+ * Keep the user's saved values, but pull in any new default nouns/verbs/config
+ * keys that were added to the app after this snapshot was saved/exported.
+ */
+export function mergeCatalogDefaults(
+  snapshot: WorkspaceSnapshot
+): WorkspaceSnapshot {
+  return {
+    ...snapshot,
+    nouns: mergeMissingById(snapshot.nouns, defaultNouns),
+    deliveryVerbs: mergeMissingById(
+      snapshot.deliveryVerbs,
+      defaultDeliveryVerbs
+    ),
+    modifierVerbs: mergeMissingById(
+      snapshot.modifierVerbs,
+      defaultModifierVerbs
+    ),
+    config: { ...defaultGlobalConfig, ...snapshot.config },
   };
 }
 
@@ -121,14 +158,14 @@ export function parseSnapshot(raw: unknown): WorkspaceSnapshot | null {
   const config = normalizeGlobalConfig(raw.config);
   if (!config) return null;
 
-  return {
+  return mergeCatalogDefaults({
     version: 1,
     savedAt: raw.savedAt,
     nouns: raw.nouns,
     deliveryVerbs: raw.deliveryVerbs,
     modifierVerbs: raw.modifierVerbs.map(normalizeModifier),
     config,
-  };
+  });
 }
 
 export function loadSnapshotFromStorage(workspaceId?: string): WorkspaceSnapshot | null {

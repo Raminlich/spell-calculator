@@ -34,9 +34,11 @@ export type Noun = {
    * Of potency gained above the noun's base potency, this percent goes to the
    * status effect; the remainder stays on damage.
    * e.g. 80 means 80% of the gain → effect, 20% → damage.
+   * Ignored when the noun has no status effect.
    */
   potencyBleedPercent: number;
-  statusEffect: StatusEffect;
+  /** Optional; omit for pure damage nouns with no status effect. */
+  statusEffect?: StatusEffect;
 };
 
 export type DeliveryVerb = {
@@ -182,6 +184,7 @@ export type SpellCombo = {
   damagePerMana: number;
   /** Mana cost ÷ cast time. */
   manaPerSecond: number;
-  effect: SpellEffectResult;
+  /** Present when the noun has a status effect. */
+  effect?: SpellEffectResult;
   label: string;
 };

@@ -35,6 +35,16 @@ export const defaultNouns: Noun[] = [
       slowAmountPercent: 50,
     },
   },
+  {
+    id: "arcane",
+    name: "Arcane",
+    description: "Pure magical damage. No status effect.",
+    manaCost: 18,
+    castTime: 1.0,
+    potency: 10,
+    damage: 14,
+    potencyBleedPercent: 0,
+  },
 ];
 
 export const defaultDeliveryVerbs: DeliveryVerb[] = [

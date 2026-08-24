@@ -24,6 +24,7 @@ import {
   createSnapshot,
   downloadSnapshot,
   loadSnapshotFromStorage,
+  mergeCatalogDefaults,
   readSnapshotFromFile,
   saveSnapshotToStorage,
   type WorkspaceSnapshot,
@@ -80,11 +81,12 @@ function applySnapshot(
     setLastSavedAt: (iso: string | null) => void;
   }
 ) {
-  setters.setNouns(snapshot.nouns);
-  setters.setDeliveryVerbs(snapshot.deliveryVerbs);
-  setters.setModifierVerbs(snapshot.modifierVerbs);
-  setters.setConfig(snapshot.config);
-  setters.setLastSavedAt(snapshot.savedAt);
+  const merged = mergeCatalogDefaults(snapshot);
+  setters.setNouns(merged.nouns);
+  setters.setDeliveryVerbs(merged.deliveryVerbs);
+  setters.setModifierVerbs(merged.modifierVerbs);
+  setters.setConfig(merged.config);
+  setters.setLastSavedAt(merged.savedAt);
 }
 
 export function SpellConfigProvider({ children }: { children: ReactNode }) {
