@@ -14,6 +14,7 @@ import {
   defaultModifierVerbs,
   defaultGlobalConfig,
 } from "@/lib/defaultData";
+import { defaultRadarMetrics, type RadarMetric } from "@/lib/radarMetrics";
 import type {
   Noun,
   DeliveryVerb,
@@ -49,22 +50,21 @@ type SpellConfigContextValue = {
   updateModifier: (id: string, verb: ModifierVerb) => void;
   config: GlobalConfig;
   setConfig: (config: GlobalConfig) => void;
+  radarMetrics: RadarMetric[];
+  setRadarMetrics: (metrics: RadarMetric[]) => void;
+  updateRadarMetric: (id: string, metric: RadarMetric) => void;
+  addRadarMetric: (metric: RadarMetric) => void;
+  removeRadarMetric: (id: string) => void;
   resetAll: () => void;
   persistenceMode: PersistenceMode;
-  /** ISO timestamp of the last successful save, or null. */
   lastSavedAt: string | null;
-  /** True after the initial hydrate attempt finishes. */
   hydrated: boolean;
-  /** Persist current data to cloud (with local cache). */
   saveWorkspace: () => Promise<{
     savedAt: string;
     mode: PersistenceMode;
   } | null>;
-  /** Restore data from cloud (fallback to local cache). */
   loadWorkspace: () => Promise<boolean>;
-  /** Download current data as a JSON file. */
   exportWorkspace: () => void;
-  /** Load data from an exported JSON file. */
   importWorkspace: (file: File) => Promise<boolean>;
 };
 
@@ -77,6 +77,7 @@ function applySnapshot(
     setDeliveryVerbs: (v: DeliveryVerb[]) => void;
     setModifierVerbs: (v: ModifierVerb[]) => void;
     setConfig: (c: GlobalConfig) => void;
+    setRadarMetrics: (m: RadarMetric[]) => void;
     setLastSavedAt: (iso: string | null) => void;
   }
 ) {
@@ -85,6 +86,7 @@ function applySnapshot(
   setters.setDeliveryVerbs(merged.deliveryVerbs);
   setters.setModifierVerbs(merged.modifierVerbs);
   setters.setConfig(merged.config);
+  setters.setRadarMetrics(merged.radarMetrics);
   setters.setLastSavedAt(merged.savedAt);
 }
 
@@ -95,6 +97,8 @@ export function SpellConfigProvider({ children }: { children: ReactNode }) {
   const [modifierVerbs, setModifierVerbs] =
     useState<ModifierVerb[]>(defaultModifierVerbs);
   const [config, setConfig] = useState<GlobalConfig>(defaultGlobalConfig);
+  const [radarMetrics, setRadarMetrics] =
+    useState<RadarMetric[]>(defaultRadarMetrics);
   const [persistenceMode, setPersistenceMode] =
     useState<PersistenceMode>("local");
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
@@ -115,6 +119,7 @@ export function SpellConfigProvider({ children }: { children: ReactNode }) {
           setDeliveryVerbs,
           setModifierVerbs,
           setConfig,
+          setRadarMetrics,
           setLastSavedAt,
         });
         saveSnapshotToStorage(serverResult);
@@ -130,6 +135,7 @@ export function SpellConfigProvider({ children }: { children: ReactNode }) {
           setDeliveryVerbs,
           setModifierVerbs,
           setConfig,
+          setRadarMetrics,
           setLastSavedAt,
         });
       }
@@ -155,11 +161,24 @@ export function SpellConfigProvider({ children }: { children: ReactNode }) {
     setModifierVerbs((prev) => prev.map((v) => (v.id === id ? verb : v)));
   }
 
+  function updateRadarMetric(id: string, metric: RadarMetric) {
+    setRadarMetrics((prev) => prev.map((m) => (m.id === id ? metric : m)));
+  }
+
+  function addRadarMetric(metric: RadarMetric) {
+    setRadarMetrics((prev) => [...prev, metric]);
+  }
+
+  function removeRadarMetric(id: string) {
+    setRadarMetrics((prev) => prev.filter((m) => m.id !== id));
+  }
+
   function resetAll() {
     setNouns(defaultNouns);
     setDeliveryVerbs(defaultDeliveryVerbs);
     setModifierVerbs(defaultModifierVerbs);
     setConfig(defaultGlobalConfig);
+    setRadarMetrics(defaultRadarMetrics);
     setLastSavedAt(null);
   }
 
@@ -169,6 +188,7 @@ export function SpellConfigProvider({ children }: { children: ReactNode }) {
       deliveryVerbs,
       modifierVerbs,
       config,
+      radarMetrics,
     });
 
     saveSnapshotToStorage(snapshot);
@@ -178,7 +198,7 @@ export function SpellConfigProvider({ children }: { children: ReactNode }) {
     const mode: PersistenceMode = savedToServer ? "server" : "local";
     setPersistenceMode(mode);
     return { savedAt: snapshot.savedAt, mode };
-  }, [nouns, deliveryVerbs, modifierVerbs, config]);
+  }, [nouns, deliveryVerbs, modifierVerbs, config, radarMetrics]);
 
   const loadWorkspace = useCallback(async () => {
     const serverResult = await fetchSavedDataFromServer();
@@ -188,6 +208,7 @@ export function SpellConfigProvider({ children }: { children: ReactNode }) {
         setDeliveryVerbs,
         setModifierVerbs,
         setConfig,
+        setRadarMetrics,
         setLastSavedAt,
       });
       saveSnapshotToStorage(serverResult);
@@ -203,6 +224,7 @@ export function SpellConfigProvider({ children }: { children: ReactNode }) {
       setDeliveryVerbs,
       setModifierVerbs,
       setConfig,
+      setRadarMetrics,
       setLastSavedAt,
     });
     setPersistenceMode(serverResult === "error" ? "local" : "server");
@@ -215,9 +237,10 @@ export function SpellConfigProvider({ children }: { children: ReactNode }) {
       deliveryVerbs,
       modifierVerbs,
       config,
+      radarMetrics,
     });
     downloadSnapshot(snapshot);
-  }, [nouns, deliveryVerbs, modifierVerbs, config]);
+  }, [nouns, deliveryVerbs, modifierVerbs, config, radarMetrics]);
 
   const importWorkspace = useCallback(async (file: File) => {
     const snapshot = await readSnapshotFromFile(file);
@@ -228,6 +251,7 @@ export function SpellConfigProvider({ children }: { children: ReactNode }) {
       setDeliveryVerbs,
       setModifierVerbs,
       setConfig,
+      setRadarMetrics,
       setLastSavedAt,
     });
     saveSnapshotToStorage(snapshot);
@@ -251,6 +275,11 @@ export function SpellConfigProvider({ children }: { children: ReactNode }) {
         updateModifier,
         config,
         setConfig,
+        radarMetrics,
+        setRadarMetrics,
+        updateRadarMetric,
+        addRadarMetric,
+        removeRadarMetric,
         resetAll,
         persistenceMode,
         lastSavedAt,

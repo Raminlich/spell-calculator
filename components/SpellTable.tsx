@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { GlobalConfig, SpellCombo } from "@/lib/types";
+import type { RadarMetric } from "@/lib/radarMetrics";
 import {
   exportCombosTable,
   type TableExportFormat,
@@ -224,12 +225,14 @@ const PAGE_SIZE_OPTIONS = [25, 50, 100, 250, 500] as const;
 export default function SpellTable({
   combos,
   config,
+  radarMetrics,
   nounOptions,
   deliveryOptions,
   modifierOptions,
 }: {
   combos: SpellCombo[];
   config: GlobalConfig;
+  radarMetrics: RadarMetric[];
   nounOptions: FilterOption[];
   deliveryOptions: FilterOption[];
   modifierOptions: FilterOption[];
@@ -298,7 +301,7 @@ export default function SpellTable({
       }
     >();
     for (const c of filtered) {
-      const radar = scoreSpellRadar(c, config);
+      const radar = scoreSpellRadar(c, config, radarMetrics);
       map.set(c.key, {
         total: radar.totalScore,
         max: radar.maxTotalScore,
@@ -311,7 +314,7 @@ export default function SpellTable({
       });
     }
     return map;
-  }, [filtered, needsFullRadarSort, config]);
+  }, [filtered, needsFullRadarSort, config, radarMetrics]);
 
   const sorted = useMemo(() => {
     const withValues = filtered.map((c) => {
@@ -356,14 +359,14 @@ export default function SpellTable({
     }
     for (const c of paginated) {
       if (map.has(c.key)) continue;
-      const radar = scoreSpellRadar(c, config);
+      const radar = scoreSpellRadar(c, config, radarMetrics);
       map.set(c.key, {
         total: radar.totalScore,
         max: radar.maxTotalScore,
       });
     }
     return map;
-  }, [fullRadarScores, paginated, config]);
+  }, [fullRadarScores, paginated, config, radarMetrics]);
 
   const pageStart = sorted.length === 0 ? 0 : (currentPage - 1) * pageSize + 1;
   const pageEnd = Math.min(currentPage * pageSize, sorted.length);
@@ -847,6 +850,7 @@ export default function SpellTable({
       <SpellRadarDialog
         combo={radarCombo}
         config={config}
+        radarMetrics={radarMetrics}
         open={radarCombo !== null}
         onClose={() => setRadarCombo(null)}
       />

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import type { GlobalConfig, SpellCombo } from "@/lib/types";
+import type { RadarMetric } from "@/lib/radarMetrics";
 import { scoreSpellRadar } from "@/lib/radarScore";
 import SpellRadarChart from "@/components/SpellRadarChart";
 
@@ -17,16 +18,18 @@ function modifierSummary(combo: SpellCombo): string {
 export default function SpellRadarDialog({
   combo,
   config,
+  radarMetrics,
   open,
   onClose,
 }: {
   combo: SpellCombo | null;
   config: GlobalConfig;
+  radarMetrics: RadarMetric[];
   open: boolean;
   onClose: () => void;
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
-  const radar = combo ? scoreSpellRadar(combo, config) : null;
+  const radar = combo ? scoreSpellRadar(combo, config, radarMetrics) : null;
 
   useEffect(() => {
     const dialog = dialogRef.current;

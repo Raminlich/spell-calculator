@@ -1,13 +1,15 @@
 "use client";
 
+import { useState } from "react";
 import CardEnableToggle from "@/components/CardEnableToggle";
 import CardField from "@/components/CardField";
+import {
+  CompactNum,
+  ComponentRow,
+  KindBadge,
+  RowNameInput,
+} from "@/components/compactFields";
 import type { DeliveryVerb } from "@/lib/types";
-
-function parseNum(value: string): number {
-  const n = parseFloat(value);
-  return Number.isFinite(n) ? n : 0;
-}
 
 export default function DeliveryCard({
   verb,
@@ -17,65 +19,58 @@ export default function DeliveryCard({
   onChange: (verb: DeliveryVerb) => void;
 }) {
   const prefix = `delivery-${verb.id}`;
+  const [expanded, setExpanded] = useState(false);
 
   return (
-    <article
-      className={`@container flex min-w-0 flex-col gap-2 rounded border border-line bg-white p-2.5 ${
-        verb.enabled ? "" : "opacity-55"
-      }`}
+    <ComponentRow
+      enabled={verb.enabled}
+      expanded={expanded}
+      onToggleExpand={() => setExpanded((v) => !v)}
+      id={verb.id}
+      expandContent={
+        <>
+          <CardField
+            id={`${prefix}-description`}
+            label="Description"
+            value={verb.description}
+            onChange={(v) => onChange({ ...verb, description: v })}
+          />
+          <p className="mt-2 font-mono text-[10px] text-ink/30">{verb.id}</p>
+        </>
+      }
     >
-      <header className="flex items-center gap-2">
-        <CardEnableToggle
-          id={`${prefix}-enabled`}
-          checked={verb.enabled}
-          onChange={(enabled) => onChange({ ...verb, enabled })}
-        />
-        <CardField
-          id={`${prefix}-name`}
-          label="Name"
-          value={verb.name}
-          onChange={(v) => onChange({ ...verb, name: v })}
-          variant="title"
-          className="min-w-0 flex-1"
-        />
-        <span className="shrink-0 text-[10px] font-medium uppercase tracking-wide text-ink/40">
-          Delivery
-        </span>
-      </header>
-
-      <div className="grid grid-cols-1 gap-1.5 @min-[15rem]:grid-cols-2">
-        <CardField
-          id={`${prefix}-description`}
-          label="Description"
-          value={verb.description}
-          onChange={(v) => onChange({ ...verb, description: v })}
-          className="@min-[15rem]:col-span-2"
-        />
-        <CardField
-          id={`${prefix}-manaCost`}
-          label="Mana cost"
-          type="number"
-          value={verb.manaCost}
-          onChange={(v) => onChange({ ...verb, manaCost: parseNum(v) })}
-        />
-        <CardField
-          id={`${prefix}-castTime`}
-          label="Casting time"
-          type="number"
-          value={verb.castTime}
-          onChange={(v) => onChange({ ...verb, castTime: parseNum(v) })}
-        />
-        <CardField
-          id={`${prefix}-instances`}
-          label="Base instances"
-          type="number"
-          step={1}
-          min={0}
-          value={verb.baseInstances}
-          onChange={(v) => onChange({ ...verb, baseInstances: parseNum(v) })}
-          className="@min-[15rem]:col-span-2"
-        />
-      </div>
-    </article>
+      <CardEnableToggle
+        id={`${prefix}-enabled`}
+        checked={verb.enabled}
+        onChange={(enabled) => onChange({ ...verb, enabled })}
+      />
+      <RowNameInput
+        id={`${prefix}-name`}
+        value={verb.name}
+        onChange={(v) => onChange({ ...verb, name: v })}
+      />
+      <KindBadge>Delivery</KindBadge>
+      <CompactNum
+        id={`${prefix}-manaCost`}
+        label="Mana"
+        value={verb.manaCost}
+        onChange={(v) => onChange({ ...verb, manaCost: v })}
+      />
+      <CompactNum
+        id={`${prefix}-castTime`}
+        label="Cast"
+        value={verb.castTime}
+        onChange={(v) => onChange({ ...verb, castTime: v })}
+        step={0.05}
+      />
+      <CompactNum
+        id={`${prefix}-instances`}
+        label="Inst"
+        value={verb.baseInstances}
+        onChange={(v) => onChange({ ...verb, baseInstances: v })}
+        step={1}
+        min={0}
+      />
+    </ComponentRow>
   );
 }

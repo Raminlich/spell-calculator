@@ -8,7 +8,7 @@ import SpellTable from "@/components/SpellTable";
 import SaveControls from "@/components/SaveControls";
 
 export default function Home() {
-  const { nouns, deliveryVerbs, modifierVerbs, config, setConfig } =
+  const { nouns, deliveryVerbs, modifierVerbs, config, setConfig, radarMetrics } =
     useSpellConfig();
 
   const { combos, truncated } = useMemo(
@@ -51,6 +51,7 @@ export default function Home() {
         <SpellTable
           combos={combos}
           config={config}
+          radarMetrics={radarMetrics}
           nounOptions={nouns.map((n) => ({ id: n.id, name: n.name }))}
           deliveryOptions={deliveryVerbs.map((d) => ({ id: d.id, name: d.name }))}
           modifierOptions={modifierVerbs.map((m) => ({ id: m.id, name: m.name }))}

@@ -10,6 +10,12 @@ import {
   defaultModifierVerbs,
   defaultNouns,
 } from "@/lib/defaultData";
+import {
+  applyLegacyRadarConfig,
+  defaultRadarMetrics,
+  parseRadarMetrics,
+  type RadarMetric,
+} from "@/lib/radarMetrics";
 
 export const STORAGE_KEY = "spell-calculator:data:v1";
 const LEGACY_STORAGE_PREFIX = "spell-calculator:workspace:v1:";
@@ -21,6 +27,7 @@ export type WorkspaceSnapshot = {
   deliveryVerbs: DeliveryVerb[];
   modifierVerbs: ModifierVerb[];
   config: GlobalConfig;
+  radarMetrics: RadarMetric[];
 };
 
 export function createSnapshot(data: {
@@ -28,6 +35,7 @@ export function createSnapshot(data: {
   deliveryVerbs: DeliveryVerb[];
   modifierVerbs: ModifierVerb[];
   config: GlobalConfig;
+  radarMetrics: RadarMetric[];
 }): WorkspaceSnapshot {
   return {
     version: 1,
@@ -36,6 +44,7 @@ export function createSnapshot(data: {
     deliveryVerbs: data.deliveryVerbs,
     modifierVerbs: data.modifierVerbs,
     config: data.config,
+    radarMetrics: data.radarMetrics,
   };
 }
 
@@ -88,8 +97,8 @@ function mergeMissingById<T extends { id: string }>(
 }
 
 /**
- * Keep the user's saved values, but pull in any new default nouns/verbs/config
- * keys that were added to the app after this snapshot was saved/exported.
+ * Keep the user's saved values, but pull in any new default nouns/verbs/metrics
+ * that were added to the app after this snapshot was saved/exported.
  */
 export function mergeCatalogDefaults(
   snapshot: WorkspaceSnapshot
@@ -105,6 +114,7 @@ export function mergeCatalogDefaults(
       snapshot.modifierVerbs,
       defaultModifierVerbs
     ),
+    radarMetrics: snapshot.radarMetrics,
     config: { ...defaultGlobalConfig, ...snapshot.config },
   };
 }
@@ -119,27 +129,13 @@ const REQUIRED_CONFIG_KEYS: (keyof GlobalConfig)[] = [
   "minTotalModifiers",
 ];
 
-const OPTIONAL_RADAR_KEYS: (keyof GlobalConfig)[] = [
+const OPTIONAL_RADAR_MAX_KEYS: (keyof GlobalConfig)[] = [
   "radarMaxCost",
   "radarMaxTime",
   "radarMaxImpact",
   "radarMaxEfficiency",
   "radarMaxDeliveryControl",
   "radarMaxStatusEffect",
-  "radarEffectScoreSlow",
-  "radarEffectScoreBurn",
-  "radarSeekScoreYes",
-  "radarSeekScoreNo",
-  "radarHalfManaCost",
-  "radarHalfManaPerSecond",
-  "radarHalfCastTime",
-  "radarHalfTotalDamage",
-  "radarHalfDamagePerInstance",
-  "radarHalfDamagePerMana",
-  "radarHalfChainTargets",
-  "radarHalfSplitStacks",
-  "radarHalfEffectDuration",
-  "radarHalfEffectPotency",
 ];
 
 function normalizeGlobalConfig(value: unknown): GlobalConfig | null {
@@ -152,7 +148,7 @@ function normalizeGlobalConfig(value: unknown): GlobalConfig | null {
   for (const key of REQUIRED_CONFIG_KEYS) {
     config[key] = value[key] as number;
   }
-  for (const key of OPTIONAL_RADAR_KEYS) {
+  for (const key of OPTIONAL_RADAR_MAX_KEYS) {
     if (typeof value[key] === "number") {
       config[key] = value[key] as number;
     }
@@ -170,6 +166,15 @@ export function parseSnapshot(raw: unknown): WorkspaceSnapshot | null {
   const config = normalizeGlobalConfig(raw.config);
   if (!config) return null;
 
+  const parsedMetrics = parseRadarMetrics(raw.radarMetrics);
+  const radarMetrics =
+    parsedMetrics === null
+      ? applyLegacyRadarConfig(
+          defaultRadarMetrics,
+          isObject(raw.config) ? raw.config : {}
+        )
+      : parsedMetrics;
+
   return mergeCatalogDefaults({
     version: 1,
     savedAt: raw.savedAt,
@@ -177,6 +182,7 @@ export function parseSnapshot(raw: unknown): WorkspaceSnapshot | null {
     deliveryVerbs: raw.deliveryVerbs.map(normalizeDelivery),
     modifierVerbs: raw.modifierVerbs.map(normalizeModifier),
     config,
+    radarMetrics,
   });
 }
 

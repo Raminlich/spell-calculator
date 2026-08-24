@@ -1,12 +1,14 @@
 import type { GlobalConfig, SpellCombo } from "@/lib/types";
+import {
+  AXIS_MAX_WEIGHT_KEY,
+  evaluateRadarMetric,
+  RADAR_AXIS_OPTIONS,
+  type RadarAxisId,
+  type RadarMetric,
+} from "@/lib/radarMetrics";
 
-export type RadarAxisId =
-  | "cost"
-  | "time"
-  | "impact"
-  | "efficiency"
-  | "deliveryControl"
-  | "statusEffect";
+export type { RadarAxisId } from "@/lib/radarMetrics";
+export { RADAR_AXIS_OPTIONS } from "@/lib/radarMetrics";
 
 export type RadarAxisResult = {
   id: RadarAxisId;
@@ -30,23 +32,6 @@ export type SpellRadarScore = {
   normalizedTotal: number;
 };
 
-export const RADAR_AXIS_OPTIONS: {
-  id: RadarAxisId;
-  label: string;
-  shortLabel: string;
-}[] = [
-  { id: "cost", label: "Affordability", shortLabel: "Afford." },
-  { id: "time", label: "Speed", shortLabel: "Speed" },
-  { id: "impact", label: "Impact", shortLabel: "Impact" },
-  { id: "efficiency", label: "Efficiency", shortLabel: "Eff." },
-  {
-    id: "deliveryControl",
-    label: "Control",
-    shortLabel: "Control",
-  },
-  { id: "statusEffect", label: "Status Effect", shortLabel: "Status" },
-];
-
 const RADAR_AXIS_SORT_PREFIX = "radarAxis:";
 
 export function radarAxisSortKey(axisId: RadarAxisId): string {
@@ -57,20 +42,6 @@ export function parseRadarAxisSortKey(sortKey: string): RadarAxisId | null {
   if (!sortKey.startsWith(RADAR_AXIS_SORT_PREFIX)) return null;
   const axisId = sortKey.slice(RADAR_AXIS_SORT_PREFIX.length) as RadarAxisId;
   return RADAR_AXIS_OPTIONS.some((a) => a.id === axisId) ? axisId : null;
-}
-
-/** Soft curve: value = k → 0.5. Higher values approach 1. */
-function higherBetter(value: number, halfAt: number): number {
-  if (!Number.isFinite(value) || value <= 0) return 0;
-  if (halfAt <= 0) return 1;
-  return value / (value + halfAt);
-}
-
-/** Soft curve: value = k → 0.5. Lower values approach 1. */
-function lowerBetter(value: number, halfAt: number): number {
-  if (!Number.isFinite(value) || value <= 0) return 1;
-  if (halfAt <= 0) return 0;
-  return halfAt / (value + halfAt);
 }
 
 function clamp01(n: number): number {
@@ -108,170 +79,23 @@ function axisScore(
   };
 }
 
-function modifierStackCount(combo: SpellCombo, modifierId: string): number {
-  return combo.modifierCounts[modifierId] ?? 0;
-}
-
-/** Map effect kind to a categorical baseline for control utility. */
-function effectCategoryScore(
-  kind: NonNullable<SpellCombo["effect"]>["kind"] | undefined,
-  config: GlobalConfig
-): number {
-  if (!kind) return 0;
-  switch (kind) {
-    case "slow":
-      return clamp01(config.radarEffectScoreSlow);
-    case "burn":
-      return clamp01(config.radarEffectScoreBurn);
-    default: {
-      const _exhaustive: never = kind;
-      return _exhaustive;
-    }
-  }
-}
-
 export function scoreSpellRadar(
   combo: SpellCombo,
-  config: GlobalConfig
+  config: GlobalConfig,
+  radarMetrics: RadarMetric[]
 ): SpellRadarScore {
-  const splitStacks = modifierStackCount(combo, "split");
-
-  const axes: RadarAxisResult[] = [
-    axisScore(
-      "cost",
-      "Affordability",
-      "Afford.",
-      config.radarMaxCost,
-      [
-        {
-          label: "Mana Cost",
-          raw: combo.manaCost.toFixed(1),
-          unit: lowerBetter(combo.manaCost, config.radarHalfManaCost),
-        },
-        {
-          label: "Mana / Second",
-          raw:
-            combo.castTime > 0 ? combo.manaPerSecond.toFixed(2) : "—",
-          unit:
-            combo.castTime > 0
-              ? lowerBetter(combo.manaPerSecond, config.radarHalfManaPerSecond)
-              : 0.5,
-        },
-      ]
-    ),
-    axisScore(
-      "time",
-      "Speed",
-      "Speed",
-      config.radarMaxTime,
-      [
-        {
-          label: "Cast Time",
-          raw: combo.castTime.toFixed(2) + "s",
-          unit: lowerBetter(combo.castTime, config.radarHalfCastTime),
-        },
-      ]
-    ),
-    axisScore(
-      "impact",
-      "Impact",
-      "Impact",
-      config.radarMaxImpact,
-      [
-        {
-          label: "Total Damage",
-          raw: combo.totalDamage.toFixed(2),
-          unit: higherBetter(combo.totalDamage, config.radarHalfTotalDamage),
-        },
-        {
-          label: "Damage / Instance",
-          raw: combo.damagePerInstance.toFixed(2),
-          unit: higherBetter(
-            combo.damagePerInstance,
-            config.radarHalfDamagePerInstance
-          ),
-        },
-      ]
-    ),
-    axisScore(
-      "efficiency",
-      "Efficiency",
-      "Eff.",
-      config.radarMaxEfficiency,
-      [
-        {
-          label: "Damage / Mana",
-          raw:
-            combo.manaCost > 0 ? combo.damagePerMana.toFixed(3) : "—",
-          unit:
-            combo.manaCost > 0
-              ? higherBetter(combo.damagePerMana, config.radarHalfDamagePerMana)
-              : 0,
-        },
-      ]
-    ),
-    axisScore(
-      "deliveryControl",
-      "Control",
-      "Control",
-      config.radarMaxDeliveryControl,
-      [
-        {
-          label: "Seek",
-          raw: combo.seeksTarget ? "yes" : "no",
-          unit: combo.seeksTarget
-            ? clamp01(config.radarSeekScoreYes)
-            : clamp01(config.radarSeekScoreNo),
-        },
-        {
-          label: "Targets",
-          raw: String(combo.chainTargets),
-          unit: higherBetter(combo.chainTargets, config.radarHalfChainTargets),
-        },
-        {
-          label: "Split",
-          raw: splitStacks > 0 ? `${splitStacks} stack${splitStacks > 1 ? "s" : ""}` : "none",
-          unit:
-            splitStacks > 0
-              ? higherBetter(splitStacks, config.radarHalfSplitStacks)
-              : 0,
-        },
-        {
-          label: "Effect",
-          raw: combo.effect?.name ?? "none",
-          unit: effectCategoryScore(combo.effect?.kind, config),
-        },
-      ]
-    ),
-    axisScore(
-      "statusEffect",
-      "Status Effect",
-      "Status",
-      config.radarMaxStatusEffect,
-      [
-        {
-          label: "Duration",
-          raw: combo.effect ? combo.effect.duration.toFixed(1) + "s" : "—",
-          unit: combo.effect
-            ? higherBetter(
-                combo.effect.duration,
-                config.radarHalfEffectDuration
-              )
-            : 0,
-        },
-        {
-          label: "Effect Potency",
-          raw: combo.effect ? combo.effect.potency.toFixed(2) : "—",
-          unit: combo.effect
-            ? higherBetter(
-                combo.effect.potency,
-                config.radarHalfEffectPotency
-              )
-            : 0,
-        },
-      ]
-    ),
-  ];
+  const axes: RadarAxisResult[] = RADAR_AXIS_OPTIONS.map((axis) => {
+    const metrics = radarMetrics
+      .filter((m) => m.axisId === axis.id && m.enabled)
+      .map((m) => evaluateRadarMetric(combo, m));
+    return axisScore(
+      axis.id,
+      axis.label,
+      axis.shortLabel,
+      config[AXIS_MAX_WEIGHT_KEY[axis.id]],
+      metrics
+    );
+  });
 
   const totalScore = axes.reduce((sum, a) => sum + a.score, 0);
   const maxTotalScore = axes.reduce((sum, a) => sum + a.maxWeight, 0);
