@@ -7,6 +7,7 @@ import { useSpellConfig } from "@/components/SpellConfigContext";
 const links = [
   { href: "/", label: "Calculator" },
   { href: "/components", label: "Components" },
+  { href: "/builder", label: "Builder" },
 ] as const;
 
 export default function AppNav() {
