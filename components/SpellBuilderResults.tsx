@@ -1,6 +1,7 @@
 "use client";
 
 import type { GlobalConfig, SpellCombo } from "@/lib/types";
+import type { RadarMetric } from "@/lib/radarMetrics";
 import { scoreSpellRadar } from "@/lib/radarScore";
 import SpellRadarChart from "@/components/SpellRadarChart";
 
@@ -14,11 +15,13 @@ function effectOutput(combo: SpellCombo): string {
 export default function SpellBuilderResults({
   combo,
   config,
+  radarMetrics,
 }: {
   combo: SpellCombo;
   config: GlobalConfig;
+  radarMetrics: RadarMetric[];
 }) {
-  const radar = scoreSpellRadar(combo, config);
+  const radar = scoreSpellRadar(combo, config, radarMetrics);
 
   return (
     <section className="rounded border border-line bg-white p-4">

@@ -82,10 +82,11 @@ function axisScore(
 export function scoreSpellRadar(
   combo: SpellCombo,
   config: GlobalConfig,
-  radarMetrics: RadarMetric[]
+  radarMetrics: RadarMetric[] = []
 ): SpellRadarScore {
+  const metricsList = radarMetrics ?? [];
   const axes: RadarAxisResult[] = RADAR_AXIS_OPTIONS.map((axis) => {
-    const metrics = radarMetrics
+    const metrics = metricsList
       .filter((m) => m.axisId === axis.id && m.enabled)
       .map((m) => evaluateRadarMetric(combo, m));
     return axisScore(

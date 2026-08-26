@@ -14,7 +14,8 @@ import {
 import type { ModifierCount } from "@/lib/types";
 
 export default function BuilderPage() {
-  const { nouns, deliveryVerbs, modifierVerbs, config } = useSpellConfig();
+  const { nouns, deliveryVerbs, modifierVerbs, config, radarMetrics } =
+    useSpellConfig();
 
   const [nounId, setNounId] = useState(() => nouns[0]?.id ?? "");
   const [deliveryId, setDeliveryId] = useState(
@@ -93,7 +94,11 @@ export default function BuilderPage() {
 
         {combo ? (
           <div className="lg:sticky lg:top-6 lg:max-h-[calc(100vh-5rem)] lg:overflow-y-auto">
-            <SpellBuilderResults combo={combo} config={config} />
+            <SpellBuilderResults
+              combo={combo}
+              config={config}
+              radarMetrics={radarMetrics}
+            />
           </div>
         ) : null}
       </div>
