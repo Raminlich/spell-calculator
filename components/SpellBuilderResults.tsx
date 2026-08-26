@@ -6,6 +6,7 @@ import { scoreSpellRadar } from "@/lib/radarScore";
 import SpellRadarChart from "@/components/SpellRadarChart";
 
 function effectOutput(combo: SpellCombo): string {
+  if (!combo.effect) return "—";
   if (combo.effect.kind === "burn") {
     return `${(combo.effect.damage ?? combo.effect.potency).toFixed(2)} burn dmg`;
   }
@@ -45,7 +46,7 @@ export default function SpellBuilderResults({
             Effect potency
           </p>
           <p className="mt-1 font-mono text-2xl font-semibold tabular-nums tracking-tight text-ink">
-            {combo.effect.potency.toFixed(2)}
+            {combo.effect ? combo.effect.potency.toFixed(2) : "—"}
           </p>
         </div>
       </div>
@@ -66,10 +67,12 @@ export default function SpellBuilderResults({
         <Stat label="Cast time" value={`${combo.castTime.toFixed(2)}s`} />
         <Stat label="Total damage" value={combo.totalDamage.toFixed(2)} />
         <Stat label="Instances" value={String(combo.instances)} />
-        <Stat label="Effect" value={combo.effect.name} />
+        <Stat label="Effect" value={combo.effect?.name ?? "—"} />
         <Stat
           label="Effect duration"
-          value={`${combo.effect.duration.toFixed(1)}s`}
+          value={
+            combo.effect ? `${combo.effect.duration.toFixed(1)}s` : "—"
+          }
         />
         <Stat label="Effect output" value={effectOutput(combo)} />
         <Stat
