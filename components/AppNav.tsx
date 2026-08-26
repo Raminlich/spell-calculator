@@ -8,6 +8,7 @@ const links = [
   { href: "/", label: "Calculator" },
   { href: "/components", label: "Components" },
   { href: "/radar", label: "Radar" },
+  { href: "/builder", label: "Builder" },
 ] as const;
 
 export default function AppNav() {
